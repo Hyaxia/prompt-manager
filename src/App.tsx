@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Trash2, Plus, Search, Folder, FolderPlus, Move, Copy, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { Tab } from '@headlessui/react';
 import storage from './storage';
 
 interface Prompt {
@@ -155,203 +156,236 @@ function App() {
         Prompt Saver
       </h1>
 
-      <div className="mb-4 flex items-center justify-between">
-        <button
-          onClick={() => setIsAddingFolder(true)}
-          className="text-sm flex items-center gap-1 text-gray-600 hover:text-gray-800"
-        >
-          <FolderPlus className="w-4 h-4" />
-          New Folder
-        </button>
-        {selectedFolderId && (
-          <button
-            onClick={() => setSelectedFolderId(null)}
-            className="text-sm text-blue-600 hover:text-blue-800"
-          >
-            Show All
-          </button>
-        )}
-      </div>
+      <Tab.Group>
+        <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/20 p-1 mb-4">
+          <Tab className={({ selected }) =>
+            `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
+            ${selected 
+              ? 'bg-white text-blue-700 shadow'
+              : 'text-blue-500 hover:bg-white/[0.12] hover:text-blue-600'
+            }`
+          }>
+            Add Prompt
+          </Tab>
+          <Tab className={({ selected }) =>
+            `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
+            ${selected 
+              ? 'bg-white text-blue-700 shadow'
+              : 'text-blue-500 hover:bg-white/[0.12] hover:text-blue-600'
+            }`
+          }>
+            Browse Prompts
+          </Tab>
+        </Tab.List>
 
-      {isAddingFolder && (
-        <div className="mb-4 flex gap-2">
-          <input
-            type="text"
-            placeholder="Folder name"
-            className="flex-1 p-2 border rounded-md"
-            value={newFolderName}
-            onChange={(e) => setNewFolderName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addFolder()}
-          />
-          <button
-            onClick={addFolder}
-            className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Add
-          </button>
-          <button
-            onClick={() => {
-              setIsAddingFolder(false);
-              setNewFolderName('');
-            }}
-            className="px-3 py-2 bg-gray-200 text-gray-600 rounded-md hover:bg-gray-300"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
-
-      {folders.length > 0 && (
-        <div className="mb-4 space-y-1">
-          {folders.map((folder) => (
-            <div
-              key={folder.id}
-              className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${
-                selectedFolderId === folder.id ? 'bg-blue-50' : 'hover:bg-gray-100'
-              }`}
-              onClick={() => setSelectedFolderId(folder.id)}
-            >
-              <div className="flex items-center gap-2">
-                <Folder className="w-4 h-4 text-gray-600" />
-                <span className="text-sm">{folder.name}</span>
-              </div>
-              {selectedFolderId === folder.id && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteFolder(folder.id);
-                  }}
-                  className="text-red-500 hover:text-red-600"
-                  title="Delete folder"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="mb-6 bg-white p-4 rounded-lg shadow-sm">
-        <input
-          type="text"
-          placeholder="Prompt Title"
-          className="w-full mb-2 p-2 border rounded-md"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-        <div className="relative">
-          <textarea
-            placeholder="Enter your prompt... (Markdown supported)"
-            className="w-full h-24 p-2 border rounded-md mb-2"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onFocus={() => setPreview(false)}
-          />
-          {content && (
-            <button
-              className="absolute top-2 right-2 px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200"
-              onClick={() => setPreview(!preview)}
-            >
-              {preview ? 'Edit' : 'Preview'}
-            </button>
-          )}
-          {preview && content && (
-            <div className="w-full min-h-[96px] p-2 border rounded-md mb-2 prose prose-sm max-w-none">
-              <ReactMarkdown>{content}</ReactMarkdown>
-            </div>
-          )}
-        </div>
-        <button
-          onClick={savePrompt}
-          className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 flex items-center justify-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Save Prompt
-        </button>
-      </div>
-
-      <div className="relative mb-4">
-        <input
-          type="text"
-          placeholder="Search prompts..."
-          className="w-full p-2 pr-8 border rounded-md"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        <Search className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-      </div>
-
-      <div className="space-y-3">
-        {filteredPrompts.map((prompt) => (
-          <div key={prompt.id} className="bg-white p-3 rounded-lg shadow-sm">
-            <div className="flex justify-between items-start mb-2">
-              <div className="flex flex-col">
-                <h3 className="font-semibold text-gray-800">{prompt.title}</h3>
-                <span className="text-xs text-gray-500 font-mono">{getPromptPath(prompt)}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => copyToClipboard(prompt.content, prompt.id)}
-                  className="text-gray-500 hover:text-gray-600"
-                  title="Copy to clipboard"
-                >
-                  {copiedPromptId === prompt.id ? (
-                    <Check className="w-4 h-4 text-green-500" data-testid="check-icon" />
-                  ) : (
-                    <Copy className="w-4 h-4" />
-                  )}
-                </button>
-                <button
-                  onClick={() => setMovingPromptId(movingPromptId === prompt.id ? null : prompt.id)}
-                  className="text-gray-500 hover:text-gray-600"
-                  title="Move prompt"
-                >
-                  <Move className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => deletePrompt(prompt.id)}
-                  className="text-red-500 hover:text-red-600"
-                  title="Delete prompt"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            {movingPromptId === prompt.id && (
-              <div className="mb-2 p-2 bg-gray-50 rounded-md">
-                <div className="text-sm font-medium mb-1">Move to:</div>
-                <button
-                  onClick={() => movePrompt(prompt.id, null)}
-                  className="block w-full text-left px-2 py-1 text-sm hover:bg-gray-100 rounded"
-                >
-                  Root
-                </button>
-                {folders.map(folder => (
+        <Tab.Panels>
+          <Tab.Panel>
+            {/* Add Prompt Panel */}
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+              <input
+                type="text"
+                placeholder="Prompt Title"
+                className="w-full mb-2 p-2 border rounded-md"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+              <div className="relative">
+                <textarea
+                  placeholder="Enter your prompt... (Markdown supported)"
+                  className="w-full h-24 p-2 border rounded-md mb-2"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  onFocus={() => setPreview(false)}
+                />
+                {content && (
                   <button
-                    key={folder.id}
-                    onClick={() => movePrompt(prompt.id, folder.id)}
-                    className="block w-full text-left px-2 py-1 text-sm hover:bg-gray-100 rounded"
+                    className="absolute top-2 right-2 px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200"
+                    onClick={() => setPreview(!preview)}
                   >
-                    {folder.name}
+                    {preview ? 'Edit' : 'Preview'}
                   </button>
-                ))}
+                )}
+                {preview && content && (
+                  <div className="w-full min-h-[96px] p-2 border rounded-md mb-2 prose prose-sm max-w-none">
+                    <ReactMarkdown>{content}</ReactMarkdown>
+                  </div>
+                )}
               </div>
-            )}
-            <div className="prose prose-sm max-w-none text-gray-600 max-h-[300px] overflow-y-auto">
-              <ReactMarkdown>{prompt.content}</ReactMarkdown>
+              <button
+                onClick={savePrompt}
+                className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Save Prompt
+              </button>
             </div>
-            <p className="text-xs text-gray-400 mt-2">
-              {new Date(prompt.createdAt).toLocaleDateString()}
-            </p>
-          </div>
-        ))}
-        {filteredPrompts.length === 0 && searchQuery && (
-          <div className="text-center text-gray-500 py-4">
-            No prompts found matching your search
-          </div>
-        )}
-      </div>
+          </Tab.Panel>
+
+          <Tab.Panel>
+            {/* Browse Prompts Panel */}
+            <div>
+              <div className="mb-4 flex items-center justify-between">
+                <button
+                  onClick={() => setIsAddingFolder(true)}
+                  className="text-sm flex items-center gap-1 text-gray-600 hover:text-gray-800"
+                >
+                  <FolderPlus className="w-4 h-4" />
+                  New Folder
+                </button>
+                {selectedFolderId && (
+                  <button
+                    onClick={() => setSelectedFolderId(null)}
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    Show All
+                  </button>
+                )}
+              </div>
+
+              {isAddingFolder && (
+                <div className="mb-4 flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Folder name"
+                    className="flex-1 p-2 border rounded-md"
+                    value={newFolderName}
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && addFolder()}
+                  />
+                  <button
+                    onClick={addFolder}
+                    className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    Add
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsAddingFolder(false);
+                      setNewFolderName('');
+                    }}
+                    className="px-3 py-2 bg-gray-200 text-gray-600 rounded-md hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+
+              {folders.length > 0 && (
+                <div className="mb-4 space-y-1">
+                  {folders.map((folder) => (
+                    <div
+                      key={folder.id}
+                      className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${
+                        selectedFolderId === folder.id ? 'bg-blue-50' : 'hover:bg-gray-100'
+                      }`}
+                      onClick={() => setSelectedFolderId(folder.id)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Folder className="w-4 h-4 text-gray-600" />
+                        <span className="text-sm">{folder.name}</span>
+                      </div>
+                      {selectedFolderId === folder.id && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteFolder(folder.id);
+                          }}
+                          className="text-red-500 hover:text-red-600"
+                          title="Delete folder"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="relative mb-4">
+                <input
+                  type="text"
+                  placeholder="Search prompts..."
+                  className="w-full p-2 pr-8 border rounded-md"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <Search className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              </div>
+
+              <div className="space-y-3">
+                {filteredPrompts.map((prompt) => (
+                  <div key={prompt.id} className="bg-white p-3 rounded-lg shadow-sm">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex flex-col">
+                        <h3 className="font-semibold text-gray-800">{prompt.title}</h3>
+                        <span className="text-xs text-gray-500 font-mono">Path: {getPromptPath(prompt)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => copyToClipboard(prompt.content, prompt.id)}
+                          className="text-gray-500 hover:text-gray-600"
+                          title="Copy to clipboard"
+                        >
+                          {copiedPromptId === prompt.id ? (
+                            <Check className="w-4 h-4 text-green-500" data-testid="check-icon" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setMovingPromptId(movingPromptId === prompt.id ? null : prompt.id)}
+                          className="text-gray-500 hover:text-gray-600"
+                          title="Move prompt"
+                        >
+                          <Move className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => deletePrompt(prompt.id)}
+                          className="text-red-500 hover:text-red-600"
+                          title="Delete prompt"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    {movingPromptId === prompt.id && (
+                      <div className="mb-2 p-2 bg-gray-50 rounded-md">
+                        <div className="text-sm font-medium mb-1">Move to:</div>
+                        <button
+                          onClick={() => movePrompt(prompt.id, null)}
+                          className="block w-full text-left px-2 py-1 text-sm hover:bg-gray-100 rounded"
+                        >
+                          Root
+                        </button>
+                        {folders.map(folder => (
+                          <button
+                            key={folder.id}
+                            onClick={() => movePrompt(prompt.id, folder.id)}
+                            className="block w-full text-left px-2 py-1 text-sm hover:bg-gray-100 rounded"
+                          >
+                            {folder.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <div className="prose prose-sm max-w-none text-gray-600 max-h-[300px] overflow-y-auto">
+                      <ReactMarkdown>{prompt.content}</ReactMarkdown>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">
+                      {new Date(prompt.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))}
+                {filteredPrompts.length === 0 && searchQuery && (
+                  <div className="text-center text-gray-500 py-4">
+                    No prompts found matching your search
+                  </div>
+                )}
+              </div>
+            </div>
+          </Tab.Panel>
+        </Tab.Panels>
+      </Tab.Group>
     </div>
   );
 }

@@ -30,9 +30,48 @@ describe('Prompt Saver', () => {
     (storage.get as jest.Mock).mockResolvedValue({ prompts: [], folders: [] });
   });
 
+  describe('Tab Navigation', () => {
+    test('should show Add Prompt tab by default', () => {
+      render(<App />);
+      
+      // Verify Add Prompt tab is visible and active
+      const addPromptTab = screen.getByRole('tab', { name: 'Add Prompt' });
+      expect(addPromptTab).toHaveAttribute('aria-selected', 'true');
+      
+      // Verify form elements are visible
+      expect(screen.getByPlaceholderText('Prompt Title')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/Enter your prompt/)).toBeInTheDocument();
+    });
+
+    test('should switch between tabs', async () => {
+      render(<App />);
+      
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
+      
+      // Verify Browse Prompts tab is active
+      const browseTab = screen.getByRole('tab', { name: 'Browse Prompts' });
+      expect(browseTab).toHaveAttribute('aria-selected', 'true');
+      
+      // Verify browse elements are visible
+      expect(screen.getByPlaceholderText('Search prompts...')).toBeInTheDocument();
+      expect(screen.getByText('New Folder')).toBeInTheDocument();
+      
+      // Switch back to Add Prompt tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Add Prompt' }));
+      
+      // Verify Add Prompt tab is active again
+      const addPromptTab = screen.getByRole('tab', { name: 'Add Prompt' });
+      expect(addPromptTab).toHaveAttribute('aria-selected', 'true');
+    });
+  });
+
   describe('Prompt Management', () => {
     test('should create a new prompt', async () => {
       render(<App />);
+      
+      // Ensure we're on the Add Prompt tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Add Prompt' }));
       
       // Fill in the prompt details
       await userEvent.type(screen.getByPlaceholderText('Prompt Title'), 'Test Prompt');
@@ -59,6 +98,9 @@ describe('Prompt Saver', () => {
     test('should not save prompt with empty title or content', async () => {
       render(<App />);
       
+      // Ensure we're on the Add Prompt tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Add Prompt' }));
+      
       // Try to save without title and content
       await userEvent.click(screen.getByText('Save Prompt'));
       
@@ -78,6 +120,9 @@ describe('Prompt Saver', () => {
       (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts, folders: [] });
       
       render(<App />);
+      
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
       
       // Wait for the prompt to be rendered
       await screen.findByText('Test Prompt');
@@ -103,6 +148,9 @@ describe('Prompt Saver', () => {
       
       render(<App />);
       
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
+      
       // Wait for the prompt to be rendered
       await screen.findByText('Test Prompt');
       
@@ -121,6 +169,9 @@ describe('Prompt Saver', () => {
   describe('Folder Management', () => {
     test('should create a new folder', async () => {
       render(<App />);
+      
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
       
       // Click new folder button
       await userEvent.click(screen.getByText('New Folder'));
@@ -162,6 +213,9 @@ describe('Prompt Saver', () => {
       });
       
       render(<App />);
+      
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
       
       // Wait for folder to be rendered and click it
       await userEvent.click(await screen.findByText('Test Folder'));
@@ -206,6 +260,9 @@ describe('Prompt Saver', () => {
       
       render(<App />);
       
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
+      
       // Wait for prompts to be rendered
       await screen.findByText('Test Prompt 1');
       await screen.findByText('Test Prompt 2');
@@ -248,6 +305,9 @@ describe('Prompt Saver', () => {
       });
       
       render(<App />);
+      
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
       
       // Wait for all content to be rendered
       await screen.findByText('Test Folder');

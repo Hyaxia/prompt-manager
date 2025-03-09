@@ -11,6 +11,7 @@
     "test": "jest --clearCache && jest --config jest.config.js"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.0",
     "@tailwindcss/typography": "^0.5.16",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
