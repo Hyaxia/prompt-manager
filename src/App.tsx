@@ -204,6 +204,7 @@ function App() {
                     deleteFolder(folder.id);
                   }}
                   className="text-red-500 hover:text-red-600"
+                  title="Delete folder"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -275,7 +276,7 @@ function App() {
                   title="Copy to clipboard"
                 >
                   {copiedPromptId === prompt.id ? (
-                    <Check className="w-4 h-4 text-green-500" />
+                    <Check className="w-4 h-4 text-green-500" data-testid="check-icon" />
                   ) : (
                     <Copy className="w-4 h-4" />
                   )}
@@ -283,12 +284,14 @@ function App() {
                 <button
                   onClick={() => setMovingPromptId(movingPromptId === prompt.id ? null : prompt.id)}
                   className="text-gray-500 hover:text-gray-600"
+                  title="Move prompt"
                 >
                   <Move className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => deletePrompt(prompt.id)}
                   className="text-red-500 hover:text-red-600"
+                  title="Delete prompt"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
