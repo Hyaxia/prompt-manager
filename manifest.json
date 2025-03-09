@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Prompt Saver",
+  "version": "1.0.0",
+  "description": "Save and organize your prompts for easy access",
+  "permissions": ["storage"],
+  "action": {
+    "default_popup": "index.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
