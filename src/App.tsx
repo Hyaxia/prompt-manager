@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Trash2, Plus, Search, Folder, FolderPlus, Move } from 'lucide-react';
+import { Save, Trash2, Plus, Search, Folder, FolderPlus, Move, Copy, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import storage from './storage';
 
@@ -28,6 +28,7 @@ function App() {
   const [isAddingFolder, setIsAddingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [movingPromptId, setMovingPromptId] = useState<string | null>(null);
+  const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null);
 
   useEffect(() => {
     // Load saved prompts and folders from storage
@@ -109,6 +110,16 @@ function App() {
     setPrompts(updatedPrompts);
     await storage.set({ prompts: updatedPrompts });
     setMovingPromptId(null);
+  };
+
+  const copyToClipboard = async (text: string, promptId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedPromptId(promptId);
+      setTimeout(() => setCopiedPromptId(null), 2000); // Reset after 2 seconds
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
   };
 
   const filteredPrompts = prompts.filter(prompt => {
@@ -258,6 +269,17 @@ function App() {
             <div className="flex justify-between items-start mb-2">
               <h3 className="font-semibold text-gray-800">{prompt.title}</h3>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => copyToClipboard(prompt.content, prompt.id)}
+                  className="text-gray-500 hover:text-gray-600"
+                  title="Copy to clipboard"
+                >
+                  {copiedPromptId === prompt.id ? (
+                    <Check className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
                 <button
                   onClick={() => setMovingPromptId(movingPromptId === prompt.id ? null : prompt.id)}
                   className="text-gray-500 hover:text-gray-600"
