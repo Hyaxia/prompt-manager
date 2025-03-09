@@ -124,11 +124,29 @@ function App() {
 
   const filteredPrompts = prompts.filter(prompt => {
     const query = searchQuery.toLowerCase();
-    const matchesSearch = prompt.title.toLowerCase().includes(query) ||
+    
+    // Check if prompt content or title matches
+    const matchesPrompt = prompt.title.toLowerCase().includes(query) ||
                          prompt.content.toLowerCase().includes(query);
-    const matchesFolder = !selectedFolderId || prompt.folderId === selectedFolderId;
-    return matchesSearch && matchesFolder;
+    
+    // Check if folder name matches (if prompt is in a folder)
+    const matchesFolder = prompt.folderId
+      ? folders.find(f => f.id === prompt.folderId)?.name.toLowerCase().includes(query)
+      : query.includes('root'); // Match root prompts if searching for "root"
+    
+    // Check if prompt is in the currently selected folder (if any)
+    const matchesSelectedFolder = !selectedFolderId || prompt.folderId === selectedFolderId;
+    
+    return (matchesPrompt || matchesFolder) && matchesSelectedFolder;
   });
+
+  const getPromptPath = (prompt: Prompt): string => {
+    if (!prompt.folderId) {
+      return `/root/${prompt.title}`;
+    }
+    const folder = folders.find(f => f.id === prompt.folderId);
+    return folder ? `/${folder.name}/${prompt.title}` : `/root/${prompt.title}`;
+  };
 
   return (
     <div className="w-[400px] min-h-[500px] bg-gray-50 p-4">
@@ -268,7 +286,10 @@ function App() {
         {filteredPrompts.map((prompt) => (
           <div key={prompt.id} className="bg-white p-3 rounded-lg shadow-sm">
             <div className="flex justify-between items-start mb-2">
-              <h3 className="font-semibold text-gray-800">{prompt.title}</h3>
+              <div className="flex flex-col">
+                <h3 className="font-semibold text-gray-800">{prompt.title}</h3>
+                <span className="text-xs text-gray-500 font-mono">{getPromptPath(prompt)}</span>
+              </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => copyToClipboard(prompt.content, prompt.id)}
@@ -317,7 +338,7 @@ function App() {
                 ))}
               </div>
             )}
-            <div className="prose prose-sm max-w-none text-gray-600">
+            <div className="prose prose-sm max-w-none text-gray-600 max-h-[300px] overflow-y-auto">
               <ReactMarkdown>{prompt.content}</ReactMarkdown>
             </div>
             <p className="text-xs text-gray-400 mt-2">
