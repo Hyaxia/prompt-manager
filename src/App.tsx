@@ -174,7 +174,7 @@ function App() {
     <div className="w-[400px] min-h-[500px] bg-gray-50 p-4">
       <h1 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
         <Save className="w-6 h-6" />
-        Prompt Saver
+        Prompt Manager
       </h1>
 
       <Tab.Group>

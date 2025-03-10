@@ -1,9 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Prompt Saver",
+  "name": "Prompt Manager",
   "version": "1.0.0",
   "description": "Save and organize your prompts for easy access",
-  "permissions": ["storage"],
+  "permissions": [
+    "storage"
+  ],
   "action": {
     "default_popup": "index.html"
   },

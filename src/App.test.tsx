@@ -32,7 +32,7 @@ Object.assign(navigator, {
   },
 });
 
-describe('Prompt Saver', () => {
+describe('Prompt Manager', () => {
   beforeEach(() => {
     // Reset all mocks before each test
     jest.clearAllMocks();
