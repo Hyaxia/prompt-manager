@@ -9,9 +9,6 @@
     "contextMenus",
     "identity"
   ],
-  "host_permissions": [
-    "https://raw.githubusercontent.com/your-repo/*"
-  ],
   "action": {
     "default_popup": "index.html"
   },
