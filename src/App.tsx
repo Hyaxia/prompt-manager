@@ -20,6 +20,8 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null);
   const [editingPromptId, setEditingPromptId] = useState<string | null>(null);
+  const [lastDeletedPrompt, setLastDeletedPrompt] = useState<Prompt | null>(null);
+  const [undoTimeout, setUndoTimeout] = useState<number | null>(null);
 
   useEffect(() => {
     // Load saved prompts from storage
@@ -85,10 +87,53 @@ function App() {
   };
 
   const deletePrompt = async (id: string) => {
+    const promptToDelete = prompts.find(prompt => prompt.id === id);
+    if (!promptToDelete) return;
+
+    // Clear any existing undo timeout
+    if (undoTimeout) {
+      clearTimeout(undoTimeout);
+    }
+
+    // Store the deleted prompt
+    setLastDeletedPrompt(promptToDelete);
+
+    // Remove the prompt from the list
     const updatedPrompts = prompts.filter(prompt => prompt.id !== id);
     setPrompts(updatedPrompts);
     await storage.set({ prompts: updatedPrompts });
+
+    // Set a timeout to clear the last deleted prompt after 5 seconds
+    const timeout = setTimeout(() => {
+      setLastDeletedPrompt(null);
+    }, 5000);
+    setUndoTimeout(timeout);
   };
+
+  const undoDelete = async () => {
+    if (!lastDeletedPrompt) return;
+
+    // Clear the undo timeout
+    if (undoTimeout) {
+      clearTimeout(undoTimeout);
+      setUndoTimeout(null);
+    }
+
+    // Restore the deleted prompt
+    const updatedPrompts = [...prompts, lastDeletedPrompt];
+    setPrompts(updatedPrompts);
+    await storage.set({ prompts: updatedPrompts });
+    setLastDeletedPrompt(null);
+  };
+
+  // Cleanup timeout on component unmount
+  useEffect(() => {
+    return () => {
+      if (undoTimeout) {
+        clearTimeout(undoTimeout);
+      }
+    };
+  }, [undoTimeout]);
 
   const copyToClipboard = async (text: string, promptId: string) => {
     try {
@@ -241,6 +286,17 @@ function App() {
               </div>
 
               <div className="space-y-3">
+                {lastDeletedPrompt && (
+                  <div className="bg-blue-50 p-3 rounded-lg shadow-sm flex items-center justify-between">
+                    <span className="text-blue-700">Prompt "{lastDeletedPrompt.title}" was deleted</span>
+                    <button
+                      onClick={undoDelete}
+                      className="text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Undo
+                    </button>
+                  </div>
+                )}
                 {filteredPrompts.map((prompt) => (
                   <div key={prompt.id} className="bg-white p-3 rounded-lg shadow-sm">
                     <div className="flex justify-between items-start mb-2">
