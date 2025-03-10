@@ -211,9 +211,18 @@ function App() {
 
   return (
     <div className="w-[400px] min-h-[500px] bg-gray-50 p-4">
-      <h1 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-        <Save className="w-6 h-6" />
-        Prompt Manager
+      <h1 className="text-2xl font-bold text-gray-800 mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Save className="w-6 h-6" />
+          Prompt Manager
+        </div>
+        <button
+          onClick={exportToCSV}
+          className="text-sm flex items-center gap-1 text-gray-600 hover:text-gray-800"
+        >
+          <Download className="w-4 h-4" />
+          Export CSV
+        </button>
       </h1>
 
       <Tab.Group>
@@ -311,23 +320,14 @@ function App() {
                   <FolderPlus className="w-4 h-4" />
                   New Folder
                 </button>
-                <div className="flex items-center gap-4">
-                  {selectedFolderId && (
-                    <button
-                      onClick={() => setSelectedFolderId(null)}
-                      className="text-sm text-blue-600 hover:text-blue-800"
-                    >
-                      Show All
-                    </button>
-                  )}
+                {selectedFolderId && (
                   <button
-                    onClick={exportToCSV}
-                    className="text-sm flex items-center gap-1 text-gray-600 hover:text-gray-800"
+                    onClick={() => setSelectedFolderId(null)}
+                    className="text-sm text-blue-600 hover:text-blue-800"
                   >
-                    <Download className="w-4 h-4" />
-                    Export CSV
+                    Show All
                   </button>
-                </div>
+                )}
               </div>
 
               {isAddingFolder && (
