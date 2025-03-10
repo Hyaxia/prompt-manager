@@ -21,7 +21,7 @@ function App() {
   const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null);
   const [editingPromptId, setEditingPromptId] = useState<string | null>(null);
   const [lastDeletedPrompt, setLastDeletedPrompt] = useState<Prompt | null>(null);
-  const [undoTimeout, setUndoTimeout] = useState<number | null>(null);
+  const [undoTimeout, setUndoTimeout] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Load saved prompts from storage
@@ -285,7 +285,7 @@ function App() {
                 <Search className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
                 {lastDeletedPrompt && (
                   <div className="bg-blue-50 p-3 rounded-lg shadow-sm flex items-center justify-between">
                     <span className="text-blue-700">Prompt "{lastDeletedPrompt.title}" was deleted</span>

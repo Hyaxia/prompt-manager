@@ -345,6 +345,39 @@ describe('Prompt Manager', () => {
       expect(screen.getByText('Test Prompt 1')).toBeInTheDocument();
       expect(screen.queryByText('Test Prompt 2')).not.toBeInTheDocument();
     });
+
+    test('should show scrollbar when there are many prompts', async () => {
+      // Create 20 mock prompts to ensure scrolling is needed
+      const mockPrompts = Array.from({ length: 20 }, (_, index) => ({
+        id: index.toString(),
+        title: `Test Prompt ${index + 1}`,
+        content: `Content for prompt ${index + 1}`,
+        createdAt: new Date().toISOString(),
+      }));
+      
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts });
+      
+      render(<App />);
+      
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
+      
+      // Wait for prompts to be rendered
+      await screen.findByText('Test Prompt 1');
+      
+      // Find the scrollable container (the div with space-y-3 class)
+      const promptsContainer = screen.getByText('Test Prompt 1')
+        .closest('.space-y-3');
+      
+      // Verify the container has the correct classes for scrolling
+      expect(promptsContainer).toHaveClass('overflow-y-auto');
+      expect(promptsContainer).toHaveClass('max-h-[500px]');
+      
+      // Verify all prompts are rendered
+      mockPrompts.forEach(prompt => {
+        expect(screen.getByText(prompt.title)).toBeInTheDocument();
+      });
+    });
   });
 
   describe('CSV Export', () => {
