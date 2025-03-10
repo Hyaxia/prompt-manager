@@ -213,7 +213,7 @@ function App() {
               <div className="relative">
                 <textarea
                   placeholder="Enter your prompt... (Markdown supported)"
-                  className="w-full h-24 p-2 border rounded-md mb-2"
+                  className="w-full h-64 p-2 border rounded-md mb-2"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   onFocus={() => setPreview(false)}
