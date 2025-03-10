@@ -4,7 +4,13 @@
   "version": "1.0.0",
   "description": "Save and organize your prompts for easy access",
   "permissions": [
-    "storage"
+    "storage",
+    "downloads",
+    "contextMenus",
+    "identity"
+  ],
+  "host_permissions": [
+    "https://raw.githubusercontent.com/your-repo/*"
   ],
   "action": {
     "default_popup": "index.html"

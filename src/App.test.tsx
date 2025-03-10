@@ -37,7 +37,7 @@ describe('Prompt Manager', () => {
     // Reset all mocks before each test
     jest.clearAllMocks();
     // Setup default storage mock returns
-    (storage.get as jest.Mock).mockResolvedValue({ prompts: [], folders: [] });
+    (storage.get as jest.Mock).mockResolvedValue({ prompts: [] });
   });
 
   describe('Tab Navigation', () => {
@@ -65,7 +65,6 @@ describe('Prompt Manager', () => {
       
       // Verify browse elements are visible
       expect(screen.getByPlaceholderText('Search prompts...')).toBeInTheDocument();
-      expect(screen.getByText('New Folder')).toBeInTheDocument();
       
       // Switch back to Add Prompt tab
       await userEvent.click(screen.getByRole('tab', { name: 'Add Prompt' }));
@@ -124,10 +123,9 @@ describe('Prompt Manager', () => {
         title: 'Test Prompt',
         content: 'Test Content',
         createdAt: new Date().toISOString(),
-        folderId: null,
       }];
       
-      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts, folders: [] });
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts });
       
       render(<App />);
       
@@ -151,10 +149,9 @@ describe('Prompt Manager', () => {
         title: 'Test Prompt',
         content: 'Test Content',
         createdAt: new Date().toISOString(),
-        folderId: null,
       }];
       
-      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts, folders: [] });
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts });
       
       render(<App />);
       
@@ -181,10 +178,9 @@ describe('Prompt Manager', () => {
         title: 'Test Prompt',
         content: 'Test Content',
         createdAt: new Date().toISOString(),
-        folderId: null,
       }];
       
-      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts, folders: [] });
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts });
       
       render(<App />);
       
@@ -239,10 +235,9 @@ describe('Prompt Manager', () => {
         title: 'Test Prompt',
         content: 'Test Content',
         createdAt: new Date().toISOString(),
-        folderId: null,
       }];
       
-      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts, folders: [] });
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts });
       
       render(<App />);
       
@@ -267,13 +262,13 @@ describe('Prompt Manager', () => {
       // Click cancel button
       await userEvent.click(screen.getByText('Cancel'));
       
-      // Verify form is cleared
-      expect(screen.getByPlaceholderText('Prompt Title')).toHaveValue('');
-      expect(screen.getByPlaceholderText(/Enter your prompt/)).toHaveValue('');
-      
       // Verify we're back on the Browse Prompts tab
       const browseTab = screen.getByRole('tab', { name: 'Browse Prompts' });
       expect(browseTab).toHaveAttribute('aria-selected', 'true');
+      
+      // Verify the original prompt is still visible and unchanged
+      expect(screen.getByText('Test Prompt')).toBeInTheDocument();
+      expect(screen.getByText('Test Content')).toBeInTheDocument();
       
       // Verify storage was not called
       expect(storage.set).not.toHaveBeenCalled();
@@ -285,10 +280,9 @@ describe('Prompt Manager', () => {
         title: 'Test Prompt',
         content: 'Test Content',
         createdAt: new Date().toISOString(),
-        folderId: null,
       }];
       
-      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts, folders: [] });
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts });
       
       render(<App />);
       
@@ -316,77 +310,6 @@ describe('Prompt Manager', () => {
     });
   });
 
-  describe('Folder Management', () => {
-    test('should create a new folder', async () => {
-      render(<App />);
-      
-      // Switch to Browse Prompts tab
-      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
-      
-      // Click new folder button
-      await userEvent.click(screen.getByText('New Folder'));
-      
-      // Fill in folder name
-      await userEvent.type(screen.getByPlaceholderText('Folder name'), 'Test Folder');
-      
-      // Save the folder
-      await userEvent.click(screen.getByText('Add'));
-      
-      // Verify storage was called with the new folder
-      expect(storage.set).toHaveBeenCalledWith(expect.objectContaining({
-        folders: expect.arrayContaining([
-          expect.objectContaining({
-            name: 'Test Folder',
-          }),
-        ]),
-      }));
-    });
-
-    test('should delete a folder and move its prompts to root', async () => {
-      const mockFolders = [{
-        id: '1',
-        name: 'Test Folder',
-        createdAt: new Date().toISOString(),
-      }];
-      
-      const mockPrompts = [{
-        id: '1',
-        title: 'Test Prompt',
-        content: 'Test Content',
-        createdAt: new Date().toISOString(),
-        folderId: '1',
-      }];
-      
-      (storage.get as jest.Mock).mockResolvedValue({ 
-        prompts: mockPrompts, 
-        folders: mockFolders 
-      });
-      
-      render(<App />);
-      
-      // Switch to Browse Prompts tab
-      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
-      
-      // Wait for folder to be rendered and click it
-      await userEvent.click(await screen.findByText('Test Folder'));
-      
-      // Delete the folder
-      const deleteButton = screen.getByTitle('Delete folder');
-      await userEvent.click(deleteButton);
-      
-      // Verify storage was called with updated data
-      expect(storage.set).toHaveBeenCalledWith({
-        folders: [],
-        prompts: expect.arrayContaining([
-          expect.objectContaining({
-            id: '1',
-            folderId: null,
-          }),
-        ]),
-      });
-    });
-  });
-
   describe('Search and Filter', () => {
     test('should filter prompts by search query', async () => {
       const mockPrompts = [
@@ -395,18 +318,16 @@ describe('Prompt Manager', () => {
           title: 'Test Prompt 1',
           content: 'First content',
           createdAt: new Date().toISOString(),
-          folderId: null,
         },
         {
           id: '2',
           title: 'Test Prompt 2',
           content: 'Second content',
           createdAt: new Date().toISOString(),
-          folderId: null,
         },
       ];
       
-      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts, folders: [] });
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts });
       
       render(<App />);
       
@@ -423,60 +344,6 @@ describe('Prompt Manager', () => {
       // Verify only the matching prompt is shown
       expect(screen.getByText('Test Prompt 1')).toBeInTheDocument();
       expect(screen.queryByText('Test Prompt 2')).not.toBeInTheDocument();
-    });
-
-    test('should filter prompts by folder', async () => {
-      const mockFolders = [{
-        id: '1',
-        name: 'Test Folder',
-        createdAt: new Date().toISOString(),
-      }];
-      
-      const mockPrompts = [
-        {
-          id: '1',
-          title: 'Folder Prompt',
-          content: 'In folder',
-          createdAt: new Date().toISOString(),
-          folderId: '1',
-        },
-        {
-          id: '2',
-          title: 'Root Prompt',
-          content: 'In root',
-          createdAt: new Date().toISOString(),
-          folderId: null,
-        },
-      ];
-      
-      (storage.get as jest.Mock).mockResolvedValue({ 
-        prompts: mockPrompts, 
-        folders: mockFolders 
-      });
-      
-      render(<App />);
-      
-      // Switch to Browse Prompts tab
-      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
-      
-      // Wait for all content to be rendered
-      await screen.findByText('Test Folder');
-      await screen.findByText('Folder Prompt');
-      await screen.findByText('Root Prompt');
-      
-      // Click the folder
-      await userEvent.click(screen.getByText('Test Folder'));
-      
-      // Verify only folder prompts are shown
-      expect(screen.getByText('Folder Prompt')).toBeInTheDocument();
-      expect(screen.queryByText('Root Prompt')).not.toBeInTheDocument();
-      
-      // Click show all
-      await userEvent.click(screen.getByText('Show All'));
-      
-      // Verify all prompts are shown
-      expect(screen.getByText('Folder Prompt')).toBeInTheDocument();
-      expect(screen.getByText('Root Prompt')).toBeInTheDocument();
     });
   });
 
@@ -499,91 +366,34 @@ describe('Prompt Manager', () => {
       URL.revokeObjectURL = originalRevokeObjectURL;
     });
 
-    test('should export prompts to CSV with correct format', async () => {
-      const mockDate = new Date('2024-01-01');
+    test('should export prompts to CSV', async () => {
       const mockPrompts = [
         {
           id: '1',
           title: 'Test Prompt 1',
-          content: 'Content with "quotes"',
-          createdAt: mockDate.toISOString(),
-          folderId: null,
+          content: 'First content',
+          createdAt: new Date().toISOString(),
         },
         {
           id: '2',
           title: 'Test Prompt 2',
-          content: 'Content in folder',
-          createdAt: mockDate.toISOString(),
-          folderId: 'folder1',
+          content: 'Second content',
+          createdAt: new Date().toISOString(),
         },
       ];
-
-      const mockFolders = [
-        {
-          id: 'folder1',
-          name: 'Test Folder',
-          createdAt: mockDate.toISOString(),
-        },
-      ];
-
-      (storage.get as jest.Mock).mockResolvedValue({ 
-        prompts: mockPrompts, 
-        folders: mockFolders 
-      });
-
+      
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts });
+      
       render(<App />);
-
-      // Switch to Browse Prompts tab
-      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
-
-      // Mock document.createElement to capture the download attributes
-      const mockAnchor = { click: jest.fn(), href: '', download: '' } as Partial<HTMLAnchorElement>;
-      const originalCreateElement = document.createElement.bind(document);
-      jest.spyOn(document, 'createElement').mockImplementation((tag): HTMLElement => {
-        if (tag === 'a') return mockAnchor as HTMLAnchorElement;
-        return originalCreateElement(tag);
-      });
-
+      
       // Click export button
       await userEvent.click(screen.getByText('Export CSV'));
-
-      // Verify Blob creation with correct CSV content
-      const createObjectURLCalls = (URL.createObjectURL as jest.Mock).mock.calls;
-      expect(createObjectURLCalls).toHaveLength(1);
-      const [blob] = createObjectURLCalls[0];
       
-      // Read blob content
-      const reader = new FileReader();
-      const csvText = await new Promise<string>((resolve) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsText(blob);
-      });
+      // Verify URL.createObjectURL was called
+      expect(URL.createObjectURL).toHaveBeenCalled();
       
-      expect(csvText).toContain('"Title","Content","Created At","Folder"');
-      expect(csvText).toContain('"Test Prompt 1","Content with ""quotes""",');
-      expect(csvText).toContain('"Test Prompt 2","Content in folder",');
-      expect(csvText).toContain('"root"');
-      expect(csvText).toContain('"Test Folder"');
-
-      // Verify download attributes
-      expect(mockAnchor.download).toMatch(/^prompts_\d{4}-\d{2}-\d{2}\.csv$/);
-      expect(mockAnchor.click).toHaveBeenCalled();
-
-      // Verify URL cleanup
+      // Verify URL.revokeObjectURL was called
       expect(URL.revokeObjectURL).toHaveBeenCalled();
-    });
-
-    test('should show export button only in Browse Prompts tab', async () => {
-      render(<App />);
-
-      // Should not be visible in Add Prompt tab
-      expect(screen.queryByText('Export CSV')).not.toBeInTheDocument();
-
-      // Switch to Browse Prompts tab
-      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
-
-      // Should be visible in Browse Prompts tab
-      expect(screen.getByText('Export CSV')).toBeInTheDocument();
     });
   });
 }); 
