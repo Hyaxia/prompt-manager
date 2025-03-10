@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Trash2, Plus, Search, Folder, FolderPlus, Move, Copy, Check, Download } from 'lucide-react';
+import { Save, Trash2, Plus, Search, Folder, FolderPlus, Move, Copy, Check, Download, Edit } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Tab } from '@headlessui/react';
 import storage from './storage';
@@ -9,6 +9,7 @@ interface Prompt {
   title: string;
   content: string;
   createdAt: string;
+  updatedAt?: string;
   folderId: string | null;
 }
 
@@ -30,6 +31,7 @@ function App() {
   const [newFolderName, setNewFolderName] = useState('');
   const [movingPromptId, setMovingPromptId] = useState<string | null>(null);
   const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null);
+  const [editingPromptId, setEditingPromptId] = useState<string | null>(null);
 
   useEffect(() => {
     // Load saved prompts and folders from storage
@@ -46,19 +48,56 @@ function App() {
   const savePrompt = async () => {
     if (!title || !content) return;
 
-    const newPrompt: Prompt = {
-      id: Date.now().toString(),
-      title,
-      content,
-      createdAt: new Date().toISOString(),
-      folderId: selectedFolderId,
-    };
+    if (editingPromptId) {
+      // Update existing prompt
+      const updatedPrompts = prompts.map(prompt =>
+        prompt.id === editingPromptId
+          ? { ...prompt, title, content, updatedAt: new Date().toISOString() }
+          : prompt
+      );
+      setPrompts(updatedPrompts);
+      await storage.set({ prompts: updatedPrompts });
+    } else {
+      // Create new prompt
+      const newPrompt: Prompt = {
+        id: Date.now().toString(),
+        title,
+        content,
+        createdAt: new Date().toISOString(),
+        folderId: selectedFolderId,
+      };
 
-    const updatedPrompts = [...prompts, newPrompt];
-    setPrompts(updatedPrompts);
-    await storage.set({ prompts: updatedPrompts });
+      const updatedPrompts = [...prompts, newPrompt];
+      setPrompts(updatedPrompts);
+      await storage.set({ prompts: updatedPrompts });
+    }
+
+    // Reset form
     setTitle('');
     setContent('');
+    setEditingPromptId(null);
+  };
+
+  const startEditing = (prompt: Prompt) => {
+    setTitle(prompt.title);
+    setContent(prompt.content);
+    setEditingPromptId(prompt.id);
+    // Switch to Add Prompt tab
+    const addPromptTab = document.querySelector('[role="tab"]:first-child') as HTMLElement;
+    if (addPromptTab) {
+      addPromptTab.click();
+    }
+  };
+
+  const cancelEditing = () => {
+    setTitle('');
+    setContent('');
+    setEditingPromptId(null);
+    // Switch back to Browse Prompts tab
+    const browseTab = document.querySelector('[role="tab"]:last-child') as HTMLElement;
+    if (browseTab) {
+      browseTab.click();
+    }
   };
 
   const deletePrompt = async (id: string) => {
@@ -186,7 +225,7 @@ function App() {
               : 'text-blue-500 hover:bg-white/[0.12] hover:text-blue-600'
             }`
           }>
-            Add Prompt
+            {editingPromptId ? 'Change Prompt' : 'Add Prompt'}
           </Tab>
           <Tab className={({ selected }) =>
             `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
@@ -232,13 +271,32 @@ function App() {
                   </div>
                 )}
               </div>
-              <button
-                onClick={savePrompt}
-                className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 flex items-center justify-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Save Prompt
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={savePrompt}
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 flex items-center justify-center gap-2"
+                >
+                  {editingPromptId ? (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Save Changes
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      Save Prompt
+                    </>
+                  )}
+                </button>
+                {editingPromptId && (
+                  <button
+                    onClick={cancelEditing}
+                    className="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
             </div>
           </Tab.Panel>
 
@@ -368,6 +426,13 @@ function App() {
                           title="Move prompt"
                         >
                           <Move className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => startEditing(prompt)}
+                          className="text-blue-500 hover:text-blue-600"
+                          title="Edit prompt"
+                        >
+                          <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => deletePrompt(prompt.id)}

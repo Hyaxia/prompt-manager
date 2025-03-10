@@ -174,6 +174,146 @@ describe('Prompt Manager', () => {
       // Verify success icon appears
       expect(screen.getByTestId('check-icon')).toBeInTheDocument();
     });
+
+    test('should edit an existing prompt', async () => {
+      const mockPrompts = [{
+        id: '1',
+        title: 'Test Prompt',
+        content: 'Test Content',
+        createdAt: new Date().toISOString(),
+        folderId: null,
+      }];
+      
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts, folders: [] });
+      
+      render(<App />);
+      
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
+      
+      // Wait for the prompt to be rendered
+      await screen.findByText('Test Prompt');
+      
+      // Click edit button
+      const editButton = screen.getByTitle('Edit prompt');
+      await userEvent.click(editButton);
+      
+      // Verify we're on the Change Prompt tab
+      const changePromptTab = screen.getByRole('tab', { name: 'Change Prompt' });
+      expect(changePromptTab).toHaveAttribute('aria-selected', 'true');
+      
+      // Verify form is populated with prompt data
+      expect(screen.getByPlaceholderText('Prompt Title')).toHaveValue('Test Prompt');
+      expect(screen.getByPlaceholderText(/Enter your prompt/)).toHaveValue('Test Content');
+      
+      // Update the prompt
+      await userEvent.clear(screen.getByPlaceholderText('Prompt Title'));
+      await userEvent.type(screen.getByPlaceholderText('Prompt Title'), 'Updated Prompt');
+      await userEvent.clear(screen.getByPlaceholderText(/Enter your prompt/));
+      await userEvent.type(screen.getByPlaceholderText(/Enter your prompt/), 'Updated Content');
+      
+      // Save changes
+      await userEvent.click(screen.getByText('Save Changes'));
+      
+      // Verify storage was called with updated prompt
+      expect(storage.set).toHaveBeenCalledWith({
+        prompts: expect.arrayContaining([
+          expect.objectContaining({
+            id: '1',
+            title: 'Updated Prompt',
+            content: 'Updated Content',
+            updatedAt: expect.any(String),
+          }),
+        ]),
+      });
+      
+      // Verify form is cleared and tab name is back to Add Prompt
+      expect(screen.getByPlaceholderText('Prompt Title')).toHaveValue('');
+      expect(screen.getByPlaceholderText(/Enter your prompt/)).toHaveValue('');
+      expect(screen.getByRole('tab', { name: 'Add Prompt' })).toBeInTheDocument();
+    });
+
+    test('should cancel editing a prompt', async () => {
+      const mockPrompts = [{
+        id: '1',
+        title: 'Test Prompt',
+        content: 'Test Content',
+        createdAt: new Date().toISOString(),
+        folderId: null,
+      }];
+      
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts, folders: [] });
+      
+      render(<App />);
+      
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
+      
+      // Wait for the prompt to be rendered
+      await screen.findByText('Test Prompt');
+      
+      // Click edit button
+      const editButton = screen.getByTitle('Edit prompt');
+      await userEvent.click(editButton);
+      
+      // Verify we're on the Change Prompt tab
+      const changePromptTab = screen.getByRole('tab', { name: 'Change Prompt' });
+      expect(changePromptTab).toHaveAttribute('aria-selected', 'true');
+      
+      // Verify form is populated with prompt data
+      expect(screen.getByPlaceholderText('Prompt Title')).toHaveValue('Test Prompt');
+      expect(screen.getByPlaceholderText(/Enter your prompt/)).toHaveValue('Test Content');
+      
+      // Click cancel button
+      await userEvent.click(screen.getByText('Cancel'));
+      
+      // Verify form is cleared
+      expect(screen.getByPlaceholderText('Prompt Title')).toHaveValue('');
+      expect(screen.getByPlaceholderText(/Enter your prompt/)).toHaveValue('');
+      
+      // Verify we're back on the Browse Prompts tab
+      const browseTab = screen.getByRole('tab', { name: 'Browse Prompts' });
+      expect(browseTab).toHaveAttribute('aria-selected', 'true');
+      
+      // Verify storage was not called
+      expect(storage.set).not.toHaveBeenCalled();
+    });
+
+    test('should automatically switch to Change Prompt tab when editing', async () => {
+      const mockPrompts = [{
+        id: '1',
+        title: 'Test Prompt',
+        content: 'Test Content',
+        createdAt: new Date().toISOString(),
+        folderId: null,
+      }];
+      
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts, folders: [] });
+      
+      render(<App />);
+      
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
+      
+      // Wait for the prompt to be rendered
+      await screen.findByText('Test Prompt');
+      
+      // Verify we're on Browse Prompts tab
+      const browseTab = screen.getByRole('tab', { name: 'Browse Prompts' });
+      expect(browseTab).toHaveAttribute('aria-selected', 'true');
+      
+      // Click edit button
+      const editButton = screen.getByTitle('Edit prompt');
+      await userEvent.click(editButton);
+      
+      // Verify we're automatically switched to Change Prompt tab
+      const changePromptTab = screen.getByRole('tab', { name: 'Change Prompt' });
+      expect(changePromptTab).toHaveAttribute('aria-selected', 'true');
+      
+      // Verify form is populated with prompt data
+      expect(screen.getByPlaceholderText('Prompt Title')).toHaveValue('Test Prompt');
+      expect(screen.getByPlaceholderText(/Enter your prompt/)).toHaveValue('Test Content');
+    });
   });
 
   describe('Folder Management', () => {
