@@ -3,6 +3,16 @@ import userEvent from '@testing-library/user-event';
 import App from './App';
 import storage from './storage';
 
+// Extend Window interface for test environment
+declare global {
+  interface Window {
+    URL: {
+      createObjectURL: jest.Mock;
+      revokeObjectURL: jest.Mock;
+    };
+  }
+}
+
 // Mock ReactMarkdown component
 jest.mock('react-markdown', () => ({
   __esModule: true,
@@ -327,6 +337,113 @@ describe('Prompt Saver', () => {
       // Verify all prompts are shown
       expect(screen.getByText('Folder Prompt')).toBeInTheDocument();
       expect(screen.getByText('Root Prompt')).toBeInTheDocument();
+    });
+  });
+
+  describe('CSV Export', () => {
+    let originalCreateObjectURL: typeof URL.createObjectURL;
+    let originalRevokeObjectURL: typeof URL.revokeObjectURL;
+
+    beforeEach(() => {
+      // Store original methods
+      originalCreateObjectURL = URL.createObjectURL;
+      originalRevokeObjectURL = URL.revokeObjectURL;
+      // Mock URL methods
+      URL.createObjectURL = jest.fn();
+      URL.revokeObjectURL = jest.fn();
+    });
+
+    afterEach(() => {
+      // Restore original methods
+      URL.createObjectURL = originalCreateObjectURL;
+      URL.revokeObjectURL = originalRevokeObjectURL;
+    });
+
+    test('should export prompts to CSV with correct format', async () => {
+      const mockDate = new Date('2024-01-01');
+      const mockPrompts = [
+        {
+          id: '1',
+          title: 'Test Prompt 1',
+          content: 'Content with "quotes"',
+          createdAt: mockDate.toISOString(),
+          folderId: null,
+        },
+        {
+          id: '2',
+          title: 'Test Prompt 2',
+          content: 'Content in folder',
+          createdAt: mockDate.toISOString(),
+          folderId: 'folder1',
+        },
+      ];
+
+      const mockFolders = [
+        {
+          id: 'folder1',
+          name: 'Test Folder',
+          createdAt: mockDate.toISOString(),
+        },
+      ];
+
+      (storage.get as jest.Mock).mockResolvedValue({ 
+        prompts: mockPrompts, 
+        folders: mockFolders 
+      });
+
+      render(<App />);
+
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
+
+      // Mock document.createElement to capture the download attributes
+      const mockAnchor = { click: jest.fn(), href: '', download: '' } as Partial<HTMLAnchorElement>;
+      const originalCreateElement = document.createElement.bind(document);
+      jest.spyOn(document, 'createElement').mockImplementation((tag): HTMLElement => {
+        if (tag === 'a') return mockAnchor as HTMLAnchorElement;
+        return originalCreateElement(tag);
+      });
+
+      // Click export button
+      await userEvent.click(screen.getByText('Export CSV'));
+
+      // Verify Blob creation with correct CSV content
+      const createObjectURLCalls = (URL.createObjectURL as jest.Mock).mock.calls;
+      expect(createObjectURLCalls).toHaveLength(1);
+      const [blob] = createObjectURLCalls[0];
+      
+      // Read blob content
+      const reader = new FileReader();
+      const csvText = await new Promise<string>((resolve) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsText(blob);
+      });
+      
+      expect(csvText).toContain('"Title","Content","Created At","Folder"');
+      expect(csvText).toContain('"Test Prompt 1","Content with ""quotes""",');
+      expect(csvText).toContain('"Test Prompt 2","Content in folder",');
+      expect(csvText).toContain('"root"');
+      expect(csvText).toContain('"Test Folder"');
+
+      // Verify download attributes
+      expect(mockAnchor.download).toMatch(/^prompts_\d{4}-\d{2}-\d{2}\.csv$/);
+      expect(mockAnchor.click).toHaveBeenCalled();
+
+      // Verify URL cleanup
+      expect(URL.revokeObjectURL).toHaveBeenCalled();
+    });
+
+    test('should show export button only in Browse Prompts tab', async () => {
+      render(<App />);
+
+      // Should not be visible in Add Prompt tab
+      expect(screen.queryByText('Export CSV')).not.toBeInTheDocument();
+
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
+
+      // Should be visible in Browse Prompts tab
+      expect(screen.getByText('Export CSV')).toBeInTheDocument();
     });
   });
 }); 

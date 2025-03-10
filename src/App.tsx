@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Trash2, Plus, Search, Folder, FolderPlus, Move, Copy, Check } from 'lucide-react';
+import { Save, Trash2, Plus, Search, Folder, FolderPlus, Move, Copy, Check, Download } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Tab } from '@headlessui/react';
 import storage from './storage';
@@ -123,6 +123,27 @@ function App() {
     }
   };
 
+  const exportToCSV = () => {
+    // Create CSV content
+    const csvContent = [
+      ['Title', 'Content', 'Created At', 'Folder'], // CSV header
+      ...prompts.map(prompt => [
+        prompt.title,
+        prompt.content,
+        new Date(prompt.createdAt).toLocaleDateString(),
+        prompt.folderId ? folders.find(f => f.id === prompt.folderId)?.name || 'root' : 'root'
+      ])
+    ].map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(',')).join('\n');
+
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `prompts_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
   const filteredPrompts = prompts.filter(prompt => {
     const query = searchQuery.toLowerCase();
     
@@ -232,14 +253,23 @@ function App() {
                   <FolderPlus className="w-4 h-4" />
                   New Folder
                 </button>
-                {selectedFolderId && (
+                <div className="flex items-center gap-4">
+                  {selectedFolderId && (
+                    <button
+                      onClick={() => setSelectedFolderId(null)}
+                      className="text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      Show All
+                    </button>
+                  )}
                   <button
-                    onClick={() => setSelectedFolderId(null)}
-                    className="text-sm text-blue-600 hover:text-blue-800"
+                    onClick={exportToCSV}
+                    className="text-sm flex items-center gap-1 text-gray-600 hover:text-gray-800"
                   >
-                    Show All
+                    <Download className="w-4 h-4" />
+                    Export CSV
                   </button>
-                )}
+                </div>
               </div>
 
               {isAddingFolder && (
