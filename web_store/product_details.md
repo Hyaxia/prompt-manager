@@ -12,7 +12,7 @@ Prompt Manager – Your Personal AI Prompt Library
 Tired of losing track of your best AI prompts? Prompt Manager is the ultimate tool for organizing, refining, and accessing your most effective prompts—right inside your browser! Whether you're a developer, marketer, writer, or AI enthusiast, this extension keeps your prompts at your fingertips.
 
 🔥 Why Use Prompt Manager?
-✅ Secure - Prompts are only accessible by YOU
+✅ Secure & Personal - Your prompts are only accessible by you
 ✅ Save & Organize – Store prompts, tag them, and never lose a great idea again.
 ✅ Quick Search & Access – Instantly find the right prompt for the right moment.
 ✅ Sync Across Devices – Your prompts follow you wherever you go (via Chrome sync).

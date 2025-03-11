@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Prompt Manager",
   "version": "1.0.0",
-  "description": "Save and organize your prompts for easy access",
+  "description": "Effortlessly and securely create, organize, and manage your text prompts with Prompt Manager. Save, categorize, and retrieve prompts quickly for streamlined productivity.",
   "permissions": [
     "storage",
     "downloads",
