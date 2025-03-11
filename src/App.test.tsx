@@ -429,4 +429,123 @@ describe('Prompt Manager', () => {
       expect(URL.revokeObjectURL).toHaveBeenCalled();
     });
   });
+
+  describe('Show More/Less Functionality', () => {
+    test('should show truncated content with Show More button for long prompts', async () => {
+      const longContent = 'A'.repeat(300);
+      const mockPrompts = [{
+        id: '1',
+        title: 'Long Prompt',
+        content: longContent,
+        createdAt: new Date().toISOString(),
+      }];
+      
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts });
+      
+      render(<App />);
+      
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
+      
+      // Verify the content is truncated
+      const contentContainer = screen.getByTestId('prompt-content');
+      expect(contentContainer).toHaveClass('max-h-[100px]');
+      
+      // Verify Show More button is present
+      const showMoreButton = screen.getByText('Show More');
+      expect(showMoreButton).toBeInTheDocument();
+    });
+
+    test('should not show Show More button for short prompts', async () => {
+      const shortContent = 'Short content';
+      const mockPrompts = [{
+        id: '1',
+        title: 'Short Prompt',
+        content: shortContent,
+        createdAt: new Date().toISOString(),
+      }];
+      
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts });
+      
+      render(<App />);
+      
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
+      
+      // Verify Show More button is not present
+      expect(screen.queryByText('Show More')).not.toBeInTheDocument();
+      expect(screen.queryByText('Show Less')).not.toBeInTheDocument();
+    });
+
+    test('should toggle content visibility when clicking Show More/Less', async () => {
+      const longContent = 'A'.repeat(300);
+      const mockPrompts = [{
+        id: '1',
+        title: 'Long Prompt',
+        content: longContent,
+        createdAt: new Date().toISOString(),
+      }];
+      
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts });
+      
+      render(<App />);
+      
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
+      
+      // Initial state: content is truncated
+      let contentContainer = screen.getByTestId('prompt-content');
+      expect(contentContainer).toHaveClass('max-h-[100px]');
+      
+      // Click Show More
+      await userEvent.click(screen.getByText('Show More'));
+      
+      // Content should be expanded
+      contentContainer = screen.getByTestId('prompt-content');
+      expect(contentContainer).toHaveClass('min-h-[100px]');
+      expect(contentContainer).not.toHaveClass('max-h-[100px]');
+      
+      // Show Less button should be visible
+      expect(screen.getByText('Show Less')).toBeInTheDocument();
+      
+      // Click Show Less
+      await userEvent.click(screen.getByText('Show Less'));
+      
+      // Content should be truncated again
+      contentContainer = screen.getByTestId('prompt-content');
+      expect(contentContainer).toHaveClass('max-h-[100px]');
+    });
+
+    test('should maintain gradient overlay only when content is truncated', async () => {
+      const longContent = 'A'.repeat(300);
+      const mockPrompts = [{
+        id: '1',
+        title: 'Long Prompt',
+        content: longContent,
+        createdAt: new Date().toISOString(),
+      }];
+      
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts });
+      
+      render(<App />);
+      
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
+      
+      // Initial state: gradient overlay should be present
+      expect(screen.getByText(longContent).closest('div')?.nextSibling).toHaveClass('bg-gradient-to-t');
+      
+      // Click Show More
+      await userEvent.click(screen.getByText('Show More'));
+      
+      // Gradient overlay should be removed
+      expect(screen.getByText(longContent).closest('div')?.nextSibling).toBeFalsy();
+      
+      // Click Show Less
+      await userEvent.click(screen.getByText('Show Less'));
+      
+      // Gradient overlay should be back
+      expect(screen.getByText(longContent).closest('div')?.nextSibling).toHaveClass('bg-gradient-to-t');
+    });
+  });
 }); 

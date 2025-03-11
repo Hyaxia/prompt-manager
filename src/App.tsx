@@ -343,7 +343,10 @@ function App() {
                       </div>
                     </div>
                     <div className="prose prose-sm max-w-none text-gray-600">
-                      <div className={`${prompt.content.length > 200 && !expandedPrompts.has(prompt.id) ? 'max-h-[100px]' : 'min-h-[100px]'} overflow-hidden relative`}>
+                      <div 
+                        data-testid="prompt-content"
+                        className={`${prompt.content.length > 200 && !expandedPrompts.has(prompt.id) ? 'max-h-[100px]' : 'min-h-[100px]'} overflow-hidden relative`}
+                      >
                         <ReactMarkdown>{prompt.content}</ReactMarkdown>
                         {prompt.content.length > 200 && !expandedPrompts.has(prompt.id) && (
                           <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent" />
