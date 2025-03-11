@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Trash2, Plus, Search, Copy, Check, Download, Edit } from 'lucide-react';
+import { Save, Trash2, Plus, Search, Copy, Check, Download, Edit, ChevronDown, ChevronUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Tab } from '@headlessui/react';
 import storage from './storage';
@@ -22,6 +22,7 @@ function App() {
   const [editingPromptId, setEditingPromptId] = useState<string | null>(null);
   const [lastDeletedPrompt, setLastDeletedPrompt] = useState<Prompt | null>(null);
   const [undoTimeout, setUndoTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [expandedPrompts, setExpandedPrompts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     // Load saved prompts from storage
@@ -170,6 +171,18 @@ function App() {
     return prompt.title.toLowerCase().includes(query) ||
            prompt.content.toLowerCase().includes(query);
   });
+
+  const togglePromptExpansion = (promptId: string) => {
+    setExpandedPrompts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(promptId)) {
+        newSet.delete(promptId);
+      } else {
+        newSet.add(promptId);
+      }
+      return newSet;
+    });
+  };
 
   return (
     <div className="w-[400px] min-h-[500px] bg-gray-50 p-4">
@@ -329,12 +342,37 @@ function App() {
                         </button>
                       </div>
                     </div>
-                    <div className="prose prose-sm max-w-none text-gray-600 max-h-[300px] overflow-y-auto">
-                      <ReactMarkdown>{prompt.content}</ReactMarkdown>
+                    <div className="prose prose-sm max-w-none text-gray-600">
+                      <div className={`${prompt.content.length > 200 && !expandedPrompts.has(prompt.id) ? 'max-h-[100px]' : 'min-h-[100px]'} overflow-hidden relative`}>
+                        <ReactMarkdown>{prompt.content}</ReactMarkdown>
+                        {prompt.content.length > 200 && !expandedPrompts.has(prompt.id) && (
+                          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent" />
+                        )}
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-400 mt-2">
-                      {new Date(prompt.createdAt).toLocaleDateString()}
-                    </p>
+                    <div className="flex justify-between items-center mt-2">
+                      <p className="text-xs text-gray-400">
+                        {new Date(prompt.createdAt).toLocaleDateString()}
+                      </p>
+                      {prompt.content.length > 200 && (
+                        <button
+                          onClick={() => togglePromptExpansion(prompt.id)}
+                          className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+                        >
+                          {expandedPrompts.has(prompt.id) ? (
+                            <>
+                              Show Less
+                              <ChevronUp className="w-4 h-4" />
+                            </>
+                          ) : (
+                            <>
+                              Show More
+                              <ChevronDown className="w-4 h-4" />
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
                 {filteredPrompts.length === 0 && searchQuery && (
