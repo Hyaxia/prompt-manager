@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Trash2, Plus, Search, Copy, Check, Download, Edit, ChevronDown, ChevronUp } from 'lucide-react';
+import { Save, Trash2, Plus, Search, Copy, Check, Download, Edit, ChevronDown, ChevronUp, Sun, Moon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Tab } from '@headlessui/react';
 import storage from './storage';
+
+// Add NodeJS type definition
+declare global {
+  namespace NodeJS {
+    type Timeout = number;
+  }
+}
 
 interface Prompt {
   id: string;
@@ -23,15 +30,29 @@ function App() {
   const [lastDeletedPrompt, setLastDeletedPrompt] = useState<Prompt | null>(null);
   const [undoTimeout, setUndoTimeout] = useState<NodeJS.Timeout | null>(null);
   const [expandedPrompts, setExpandedPrompts] = useState<Set<string>>(new Set());
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
-    // Load saved prompts from storage
-    storage.get(['prompts']).then((result) => {
-      if (result.prompts) {
-        setPrompts(result.prompts);
+    // Load prompts and theme preference
+    const loadData = async () => {
+      const data = await storage.get(['prompts', 'isDarkMode']);
+      if (data.prompts) {
+        setPrompts(data.prompts);
       }
-    });
+      if (data.isDarkMode) {
+        setIsDarkMode(data.isDarkMode);
+        document.documentElement.classList.toggle('dark', data.isDarkMode);
+      }
+    };
+    loadData();
   }, []);
+
+  const toggleDarkMode = async () => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    document.documentElement.classList.toggle('dark', newDarkMode);
+    await storage.set({ isDarkMode: newDarkMode });
+  };
 
   const savePrompt = async () => {
     if (!title || !content) return;
@@ -185,28 +206,37 @@ function App() {
   };
 
   return (
-    <div className="w-[400px] min-h-[500px] bg-gray-50 p-4">
-      <h1 className="text-2xl font-bold text-gray-800 mb-4 flex items-center justify-between">
+    <div className="w-[400px] min-h-[500px] bg-gray-50 dark:bg-gray-900 p-4">
+      <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Save className="w-6 h-6" />
           Prompt Manager
         </div>
-        <button
-          onClick={exportToCSV}
-          className="text-sm flex items-center gap-1 text-gray-600 hover:text-gray-800"
-        >
-          <Download className="w-4 h-4" />
-          Export CSV
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleDarkMode}
+            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
+            title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
+          <button
+            onClick={exportToCSV}
+            className="text-sm flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
+          >
+            <Download className="w-4 h-4" />
+            Export CSV
+          </button>
+        </div>
       </h1>
 
       <Tab.Group>
-        <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/20 p-1 mb-4">
+        <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/20 dark:bg-blue-900/40 p-1 mb-4">
           <Tab className={({ selected }) =>
             `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
             ${selected 
-              ? 'bg-white text-blue-700 shadow'
-              : 'text-blue-500 hover:bg-white/[0.12] hover:text-blue-600'
+              ? 'bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-400 shadow'
+              : 'text-blue-500 dark:text-blue-400 hover:bg-white/[0.12] dark:hover:bg-gray-800/[0.12] hover:text-blue-600 dark:hover:text-blue-300'
             }`
           }>
             {editingPromptId ? 'Change Prompt' : 'Add Prompt'}
@@ -214,8 +244,8 @@ function App() {
           <Tab className={({ selected }) =>
             `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
             ${selected 
-              ? 'bg-white text-blue-700 shadow'
-              : 'text-blue-500 hover:bg-white/[0.12] hover:text-blue-600'
+              ? 'bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-400 shadow'
+              : 'text-blue-500 dark:text-blue-400 hover:bg-white/[0.12] dark:hover:bg-gray-800/[0.12] hover:text-blue-600 dark:hover:text-blue-300'
             }`
           }>
             Browse Prompts
@@ -225,32 +255,32 @@ function App() {
         <Tab.Panels>
           <Tab.Panel>
             {/* Add Prompt Panel */}
-            <div className="bg-white p-4 rounded-lg shadow-sm">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
               <input
                 type="text"
                 placeholder="Prompt Title"
-                className="w-full mb-2 p-2 border rounded-md"
+                className="w-full mb-2 p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
               <div className="relative">
                 <textarea
                   placeholder="Enter your prompt... (Markdown supported)"
-                  className="w-full h-64 p-2 border rounded-md mb-2"
+                  className="w-full h-64 p-2 border dark:border-gray-600 rounded-md mb-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   onFocus={() => setPreview(false)}
                 />
                 {content && (
                   <button
-                    className="absolute top-2 right-2 px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200"
+                    className="absolute top-2 right-2 px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
                     onClick={() => setPreview(!preview)}
                   >
                     {preview ? 'Edit' : 'Preview'}
                   </button>
                 )}
                 {preview && content && (
-                  <div className="w-full min-h-[96px] p-2 border rounded-md mb-2 prose prose-sm max-w-none">
+                  <div className="w-full min-h-[96px] p-2 border dark:border-gray-600 rounded-md mb-2 prose prose-sm dark:prose-invert max-w-none">
                     <ReactMarkdown>{content}</ReactMarkdown>
                   </div>
                 )}
@@ -275,7 +305,7 @@ function App() {
                 {editingPromptId && (
                   <button
                     onClick={cancelEditing}
-                    className="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300"
+                    className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
                   >
                     Cancel
                   </button>
@@ -291,33 +321,33 @@ function App() {
                 <input
                   type="text"
                   placeholder="Search prompts..."
-                  className="w-full p-2 pr-8 border rounded-md"
+                  className="w-full p-2 pr-8 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <Search className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Search className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
               </div>
 
               <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
                 {lastDeletedPrompt && (
-                  <div className="bg-blue-50 p-3 rounded-lg shadow-sm flex items-center justify-between">
-                    <span className="text-blue-700">Prompt "{lastDeletedPrompt.title}" was deleted</span>
+                  <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg shadow-sm flex items-center justify-between">
+                    <span className="text-blue-700 dark:text-blue-300">Prompt "{lastDeletedPrompt.title}" was deleted</span>
                     <button
                       onClick={undoDelete}
-                      className="text-blue-600 hover:text-blue-800 font-medium"
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
                     >
                       Undo
                     </button>
                   </div>
                 )}
                 {filteredPrompts.map((prompt) => (
-                  <div key={prompt.id} className="bg-white p-3 rounded-lg shadow-sm">
+                  <div key={prompt.id} className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-gray-800">{prompt.title}</h3>
+                      <h3 className="font-semibold text-gray-800 dark:text-white">{prompt.title}</h3>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => copyToClipboard(prompt.content, prompt.id)}
-                          className="text-gray-500 hover:text-gray-600"
+                          className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                           title="Copy to clipboard"
                         >
                           {copiedPromptId === prompt.id ? (
@@ -328,39 +358,39 @@ function App() {
                         </button>
                         <button
                           onClick={() => startEditing(prompt)}
-                          className="text-blue-500 hover:text-blue-600"
+                          className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300"
                           title="Edit prompt"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => deletePrompt(prompt.id)}
-                          className="text-red-500 hover:text-red-600"
+                          className="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300"
                           title="Delete prompt"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
-                    <div className="prose prose-sm max-w-none text-gray-600">
+                    <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300">
                       <div 
                         data-testid="prompt-content"
                         className={`${prompt.content.length > 200 && !expandedPrompts.has(prompt.id) ? 'max-h-[100px]' : 'min-h-[100px]'} overflow-hidden relative`}
                       >
                         <ReactMarkdown>{prompt.content}</ReactMarkdown>
                         {prompt.content.length > 200 && !expandedPrompts.has(prompt.id) && (
-                          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent" />
+                          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white dark:from-gray-800 to-transparent" />
                         )}
                       </div>
                     </div>
                     <div className="flex justify-between items-center mt-2">
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
                         {new Date(prompt.createdAt).toLocaleDateString()}
                       </p>
                       {prompt.content.length > 200 && (
                         <button
                           onClick={() => togglePromptExpansion(prompt.id)}
-                          className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm flex items-center gap-1"
                         >
                           {expandedPrompts.has(prompt.id) ? (
                             <>
@@ -379,7 +409,7 @@ function App() {
                   </div>
                 ))}
                 {filteredPrompts.length === 0 && searchQuery && (
-                  <div className="text-center text-gray-500 py-4">
+                  <div className="text-center text-gray-500 dark:text-gray-400 py-4">
                     No prompts found matching your search
                   </div>
                 )}
