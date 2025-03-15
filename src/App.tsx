@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import React, { useState, useEffect } from 'react';
 import { Save, Trash2, Plus, Search, Copy, Check, Download, Edit, ChevronDown, ChevronUp, Sun, Moon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -10,12 +11,15 @@ interface Prompt {
   content: string;
   createdAt: string;
   updatedAt?: string;
+  tags: string[];
 }
 
 function App() {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
   const [preview, setPreview] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null);
@@ -54,7 +58,7 @@ function App() {
       // Update existing prompt
       const updatedPrompts = prompts.map(prompt =>
         prompt.id === editingPromptId
-          ? { ...prompt, title, content, updatedAt: new Date().toISOString() }
+          ? { ...prompt, title, content, tags, updatedAt: new Date().toISOString() }
           : prompt
       );
       setPrompts(updatedPrompts);
@@ -65,6 +69,7 @@ function App() {
         id: Date.now().toString(),
         title,
         content,
+        tags,
         createdAt: new Date().toISOString(),
       };
 
@@ -76,6 +81,8 @@ function App() {
     // Reset form
     setTitle('');
     setContent('');
+    setTags([]);
+    setTagInput('');
     setEditingPromptId(null);
     
     // Switch back to Browse Prompts tab
@@ -88,8 +95,9 @@ function App() {
   const startEditing = (prompt: Prompt) => {
     setTitle(prompt.title);
     setContent(prompt.content);
+    setTags(prompt.tags || []);
     setEditingPromptId(prompt.id);
-    // Switch to Add/Change Prompt tab (now it's the second tab)
+    // Switch to Add/Change Prompt tab
     const addPromptTab = document.querySelector('[role="tab"]:nth-child(2)') as HTMLElement;
     if (addPromptTab) {
       addPromptTab.click();
@@ -99,8 +107,10 @@ function App() {
   const cancelEditing = () => {
     setTitle('');
     setContent('');
+    setTags([]);
+    setTagInput('');
     setEditingPromptId(null);
-    // Switch back to Browse Prompts tab (now it's the first tab)
+    // Switch back to Browse Prompts tab
     const browseTab = document.querySelector('[role="tab"]:first-child') as HTMLElement;
     if (browseTab) {
       browseTab.click();
@@ -186,10 +196,26 @@ function App() {
     URL.revokeObjectURL(link.href);
   };
 
+  const addTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && tagInput.trim()) {
+      e.preventDefault();
+      const newTag = tagInput.trim();
+      if (!tags.includes(newTag)) {
+        setTags([...tags, newTag]);
+      }
+      setTagInput('');
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
   const filteredPrompts = prompts.filter(prompt => {
     const query = searchQuery.toLowerCase();
     return prompt.title.toLowerCase().includes(query) ||
-           prompt.content.toLowerCase().includes(query);
+           prompt.content.toLowerCase().includes(query) ||
+           (prompt.tags && prompt.tags.some(tag => tag.toLowerCase().includes(query)));
   });
 
   const togglePromptExpansion = (promptId: string) => {
@@ -310,6 +336,18 @@ function App() {
                         </button>
                       </div>
                     </div>
+                    {prompt.tags && prompt.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {prompt.tags.map(tag => (
+                          <span
+                            key={tag}
+                            className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300">
                       <div 
                         data-testid="prompt-content"
@@ -358,60 +396,79 @@ function App() {
           <Tab.Panel>
             {/* Add Prompt Panel */}
             <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
-              <input
-                type="text"
-                placeholder="Prompt Title"
-                className="w-full mb-2 p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-              <div className="relative">
-                <textarea
-                  placeholder="Enter your prompt... (Markdown supported)"
-                  className="w-full h-64 p-2 border dark:border-gray-600 rounded-md mb-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  onFocus={() => setPreview(false)}
-                />
-                {content && (
-                  <button
-                    className="absolute top-2 right-2 px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
-                    onClick={() => setPreview(!preview)}
-                  >
-                    {preview ? 'Edit' : 'Preview'}
-                  </button>
-                )}
-                {preview && content && (
-                  <div className="w-full min-h-[96px] p-2 border dark:border-gray-600 rounded-md mb-2 prose prose-sm dark:prose-invert max-w-none">
-                    <ReactMarkdown>{content}</ReactMarkdown>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="Enter prompt title"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Tags
+                  </label>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {tags.map(tag => (
+                      <span
+                        key={tag}
+                        className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full flex items-center gap-1"
+                      >
+                        {tag}
+                        <button
+                          onClick={() => removeTag(tag)}
+                          className="hover:text-blue-900 dark:hover:text-blue-100"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
                   </div>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={savePrompt}
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 flex items-center justify-center gap-2"
-                >
-                  {editingPromptId ? (
-                    <>
-                      <Save className="w-4 h-4" />
-                      Save Changes
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-4 h-4" />
-                      Save Prompt
-                    </>
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={addTag}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="Add tags (press Enter)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Content
+                  </label>
+                  <textarea
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    rows={6}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="Enter prompt content"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  {editingPromptId && (
+                    <button
+                      onClick={cancelEditing}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                    >
+                      Cancel
+                    </button>
                   )}
-                </button>
-                {editingPromptId && (
                   <button
-                    onClick={cancelEditing}
-                    className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
+                    onClick={savePrompt}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    Cancel
+                    {editingPromptId ? 'Update Prompt' : 'Save Prompt'}
                   </button>
-                )}
+                </div>
               </div>
             </div>
           </Tab.Panel>
