@@ -99,9 +99,13 @@ describe('Prompt Manager', () => {
         ]),
       }));
       
-      // Verify the form is cleared
-      expect(screen.getByPlaceholderText('Prompt Title')).toHaveValue('');
-      expect(screen.getByPlaceholderText(/Enter your prompt/)).toHaveValue('');
+      // Verify we're back on the Browse Prompts tab
+      const browseTab = screen.getByRole('tab', { name: 'Browse Prompts' });
+      expect(browseTab).toHaveAttribute('aria-selected', 'true');
+      
+      // Verify the new prompt is visible in the browse view
+      expect(screen.getByText('Test Prompt')).toBeInTheDocument();
+      expect(screen.getByText('Test Content')).toBeInTheDocument();
     });
 
     test('should not save prompt with empty title or content', async () => {
@@ -223,10 +227,13 @@ describe('Prompt Manager', () => {
         ]),
       });
       
-      // Verify form is cleared and tab name is back to Add Prompt
-      expect(screen.getByPlaceholderText('Prompt Title')).toHaveValue('');
-      expect(screen.getByPlaceholderText(/Enter your prompt/)).toHaveValue('');
-      expect(screen.getByRole('tab', { name: 'Add Prompt' })).toBeInTheDocument();
+      // Verify we're back on the Browse Prompts tab
+      const browseTab = screen.getByRole('tab', { name: 'Browse Prompts' });
+      expect(browseTab).toHaveAttribute('aria-selected', 'true');
+      
+      // Verify the updated prompt is visible in the browse view
+      expect(screen.getByText('Updated Prompt')).toBeInTheDocument();
+      expect(screen.getByText('Updated Content')).toBeInTheDocument();
     });
 
     test('should cancel editing a prompt', async () => {
@@ -307,6 +314,47 @@ describe('Prompt Manager', () => {
       // Verify form is populated with prompt data
       expect(screen.getByPlaceholderText('Prompt Title')).toHaveValue('Test Prompt');
       expect(screen.getByPlaceholderText(/Enter your prompt/)).toHaveValue('Test Content');
+    });
+
+    test('should switch to Browse Prompts tab after saving changes', async () => {
+      const mockPrompts = [{
+        id: '1',
+        title: 'Test Prompt',
+        content: 'Test Content',
+        createdAt: new Date().toISOString(),
+      }];
+      
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts });
+      
+      render(<App />);
+      
+      // Switch to Browse Prompts tab first
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
+      
+      // Wait for the prompt to be rendered
+      await screen.findByText('Test Prompt');
+      
+      // Start editing an existing prompt
+      const editButton = screen.getByTitle('Edit prompt');
+      await userEvent.click(editButton);
+      
+      // Verify we're on the Change Prompt tab
+      const changePromptTab = screen.getByRole('tab', { name: 'Change Prompt' });
+      expect(changePromptTab).toHaveAttribute('aria-selected', 'true');
+      
+      // Make some changes
+      await userEvent.clear(screen.getByPlaceholderText('Prompt Title'));
+      await userEvent.type(screen.getByPlaceholderText('Prompt Title'), 'Updated Title');
+      
+      // Click Save Changes
+      await userEvent.click(screen.getByText('Save Changes'));
+      
+      // Verify we're automatically switched to Browse Prompts tab
+      const browseTab = screen.getByRole('tab', { name: 'Browse Prompts' });
+      expect(browseTab).toHaveAttribute('aria-selected', 'true');
+      
+      // Verify we can see the updated content in the browse view
+      expect(screen.getByText('Updated Title')).toBeInTheDocument();
     });
   });
 

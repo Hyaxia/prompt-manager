@@ -77,6 +77,12 @@ function App() {
     setTitle('');
     setContent('');
     setEditingPromptId(null);
+    
+    // Switch back to Browse Prompts tab
+    const browseTab = document.querySelector('[role="tab"]:first-child') as HTMLElement;
+    if (browseTab) {
+      browseTab.click();
+    }
   };
 
   const startEditing = (prompt: Prompt) => {
