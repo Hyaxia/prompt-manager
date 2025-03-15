@@ -10,6 +10,16 @@ declare global {
     }
 }
 
+
+// Ignore warnings about act not being wrapped in act
+const originalError = console.error;
+console.error = (...args) => {
+    if (/Warning.*not wrapped in act/.test(args[0])) {
+        return;
+    }
+    originalError.call(console, ...args);
+};
+
 // Mock ResizeObserver which is not available in jsdom
 window.ResizeObserver = class ResizeObserver {
     observe() {}
