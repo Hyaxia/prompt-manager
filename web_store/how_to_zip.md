@@ -1,1 +1,1 @@
-`zip promptManager.zip assets/ icons index.html manifest.json`
+`zip promptManager.zip assets/* icons/* index.html manifest.json`
