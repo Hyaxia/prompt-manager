@@ -41,37 +41,37 @@ describe('Prompt Manager', () => {
   });
 
   describe('Tab Navigation', () => {
-    test('should show Add Prompt tab by default', () => {
+    test('should show Browse Prompts tab by default', () => {
       render(<App />);
       
-      // Verify Add Prompt tab is visible and active
+      // Verify Browse Prompts tab is visible and active
+      const browseTab = screen.getByRole('tab', { name: 'Browse Prompts' });
+      expect(browseTab).toHaveAttribute('aria-selected', 'true');
+      
+      // Verify browse elements are visible
+      expect(screen.getByPlaceholderText('Search prompts...')).toBeInTheDocument();
+    });
+
+    test('should switch between tabs', async () => {
+      render(<App />);
+      
+      // Switch to Add Prompt tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Add Prompt' }));
+      
+      // Verify Add Prompt tab is active
       const addPromptTab = screen.getByRole('tab', { name: 'Add Prompt' });
       expect(addPromptTab).toHaveAttribute('aria-selected', 'true');
       
       // Verify form elements are visible
       expect(screen.getByPlaceholderText('Prompt Title')).toBeInTheDocument();
       expect(screen.getByPlaceholderText(/Enter your prompt/)).toBeInTheDocument();
-    });
-
-    test('should switch between tabs', async () => {
-      render(<App />);
       
-      // Switch to Browse Prompts tab
+      // Switch back to Browse Prompts tab
       await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
       
-      // Verify Browse Prompts tab is active
+      // Verify Browse Prompts tab is active again
       const browseTab = screen.getByRole('tab', { name: 'Browse Prompts' });
       expect(browseTab).toHaveAttribute('aria-selected', 'true');
-      
-      // Verify browse elements are visible
-      expect(screen.getByPlaceholderText('Search prompts...')).toBeInTheDocument();
-      
-      // Switch back to Add Prompt tab
-      await userEvent.click(screen.getByRole('tab', { name: 'Add Prompt' }));
-      
-      // Verify Add Prompt tab is active again
-      const addPromptTab = screen.getByRole('tab', { name: 'Add Prompt' });
-      expect(addPromptTab).toHaveAttribute('aria-selected', 'true');
     });
   });
 

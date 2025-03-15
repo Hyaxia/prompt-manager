@@ -83,8 +83,8 @@ function App() {
     setTitle(prompt.title);
     setContent(prompt.content);
     setEditingPromptId(prompt.id);
-    // Switch to Add Prompt tab
-    const addPromptTab = document.querySelector('[role="tab"]:first-child') as HTMLElement;
+    // Switch to Add/Change Prompt tab (now it's the second tab)
+    const addPromptTab = document.querySelector('[role="tab"]:nth-child(2)') as HTMLElement;
     if (addPromptTab) {
       addPromptTab.click();
     }
@@ -94,8 +94,8 @@ function App() {
     setTitle('');
     setContent('');
     setEditingPromptId(null);
-    // Switch back to Browse Prompts tab
-    const browseTab = document.querySelector('[role="tab"]:last-child') as HTMLElement;
+    // Switch back to Browse Prompts tab (now it's the first tab)
+    const browseTab = document.querySelector('[role="tab"]:first-child') as HTMLElement;
     if (browseTab) {
       browseTab.click();
     }
@@ -232,7 +232,7 @@ function App() {
               : 'text-blue-500 dark:text-blue-400 hover:bg-white/[0.12] dark:hover:bg-gray-800/[0.12] hover:text-blue-600 dark:hover:text-blue-300'
             }`
           }>
-            {editingPromptId ? 'Change Prompt' : 'Add Prompt'}
+            Browse Prompts
           </Tab>
           <Tab className={({ selected }) =>
             `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
@@ -241,72 +241,11 @@ function App() {
               : 'text-blue-500 dark:text-blue-400 hover:bg-white/[0.12] dark:hover:bg-gray-800/[0.12] hover:text-blue-600 dark:hover:text-blue-300'
             }`
           }>
-            Browse Prompts
+            {editingPromptId ? 'Change Prompt' : 'Add Prompt'}
           </Tab>
         </Tab.List>
 
         <Tab.Panels>
-          <Tab.Panel>
-            {/* Add Prompt Panel */}
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
-              <input
-                type="text"
-                placeholder="Prompt Title"
-                className="w-full mb-2 p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-              <div className="relative">
-                <textarea
-                  placeholder="Enter your prompt... (Markdown supported)"
-                  className="w-full h-64 p-2 border dark:border-gray-600 rounded-md mb-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  onFocus={() => setPreview(false)}
-                />
-                {content && (
-                  <button
-                    className="absolute top-2 right-2 px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
-                    onClick={() => setPreview(!preview)}
-                  >
-                    {preview ? 'Edit' : 'Preview'}
-                  </button>
-                )}
-                {preview && content && (
-                  <div className="w-full min-h-[96px] p-2 border dark:border-gray-600 rounded-md mb-2 prose prose-sm dark:prose-invert max-w-none">
-                    <ReactMarkdown>{content}</ReactMarkdown>
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={savePrompt}
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 flex items-center justify-center gap-2"
-                >
-                  {editingPromptId ? (
-                    <>
-                      <Save className="w-4 h-4" />
-                      Save Changes
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-4 h-4" />
-                      Save Prompt
-                    </>
-                  )}
-                </button>
-                {editingPromptId && (
-                  <button
-                    onClick={cancelEditing}
-                    className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
-            </div>
-          </Tab.Panel>
-
           <Tab.Panel>
             {/* Browse Prompts Panel */}
             <div>
@@ -405,6 +344,67 @@ function App() {
                   <div className="text-center text-gray-500 dark:text-gray-400 py-4">
                     No prompts found matching your search
                   </div>
+                )}
+              </div>
+            </div>
+          </Tab.Panel>
+
+          <Tab.Panel>
+            {/* Add Prompt Panel */}
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+              <input
+                type="text"
+                placeholder="Prompt Title"
+                className="w-full mb-2 p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+              <div className="relative">
+                <textarea
+                  placeholder="Enter your prompt... (Markdown supported)"
+                  className="w-full h-64 p-2 border dark:border-gray-600 rounded-md mb-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  onFocus={() => setPreview(false)}
+                />
+                {content && (
+                  <button
+                    className="absolute top-2 right-2 px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
+                    onClick={() => setPreview(!preview)}
+                  >
+                    {preview ? 'Edit' : 'Preview'}
+                  </button>
+                )}
+                {preview && content && (
+                  <div className="w-full min-h-[96px] p-2 border dark:border-gray-600 rounded-md mb-2 prose prose-sm dark:prose-invert max-w-none">
+                    <ReactMarkdown>{content}</ReactMarkdown>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={savePrompt}
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 flex items-center justify-center gap-2"
+                >
+                  {editingPromptId ? (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Save Changes
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      Save Prompt
+                    </>
+                  )}
+                </button>
+                {editingPromptId && (
+                  <button
+                    onClick={cancelEditing}
+                    className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
                 )}
               </div>
             </div>
