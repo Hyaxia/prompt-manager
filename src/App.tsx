@@ -4,13 +4,6 @@ import ReactMarkdown from 'react-markdown';
 import { Tab } from '@headlessui/react';
 import storage from './storage';
 
-// Add NodeJS type definition
-declare global {
-  namespace NodeJS {
-    type Timeout = number;
-  }
-}
-
 interface Prompt {
   id: string;
   title: string;
