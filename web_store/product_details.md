@@ -1,9 +1,8 @@
 Category: "Tools"
 Language: "English"
 
-
-
 ---
+
 Description:
 
 Prompt Manager – Your Personal AI Prompt Library
@@ -16,7 +15,6 @@ Tired of losing track of your best AI prompts? Prompt Manager is the ultimate to
 ✅ Save & Organize – Store prompts, tag them, and never lose a great idea again.
 ✅ Quick Search & Access – Instantly find the right prompt for the right moment.
 ✅ Sync Across Devices – Your prompts follow you wherever you go (via Chrome sync).
-✅ Dark Mode & Customization – Make it yours with a sleek interface - COMING SOON
 
 💡 AI tools are only as good as the prompts you give them—unlock their full potential with Prompt Manager!
 
