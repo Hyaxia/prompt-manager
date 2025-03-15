@@ -412,6 +412,19 @@ function App() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Content
+                  </label>
+                  <textarea
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    rows={6}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="Enter prompt content"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Tags
                   </label>
                   <div className="flex flex-wrap gap-1 mb-2">
@@ -437,19 +450,6 @@ function App() {
                     onKeyDown={addTag}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                     placeholder="Add tags (press Enter)"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Content
-                  </label>
-                  <textarea
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    rows={6}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="Enter prompt content"
                   />
                 </div>
 
