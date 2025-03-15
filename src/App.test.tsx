@@ -63,8 +63,8 @@ describe('Prompt Manager', () => {
       expect(addPromptTab).toHaveAttribute('aria-selected', 'true');
       
       // Verify form elements are visible
-      expect(screen.getByPlaceholderText('Prompt Title')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText(/Enter your prompt/)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Enter prompt title')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Enter prompt content')).toBeInTheDocument();
       
       // Switch back to Browse Prompts tab
       await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
@@ -83,8 +83,8 @@ describe('Prompt Manager', () => {
       await userEvent.click(screen.getByRole('tab', { name: 'Add Prompt' }));
       
       // Fill in the prompt details
-      await userEvent.type(screen.getByPlaceholderText('Prompt Title'), 'Test Prompt');
-      await userEvent.type(screen.getByPlaceholderText(/Enter your prompt/), 'Test Content');
+      await userEvent.type(screen.getByPlaceholderText('Enter prompt title'), 'Test Prompt');
+      await userEvent.type(screen.getByPlaceholderText('Enter prompt content'), 'Test Content');
       
       // Save the prompt
       await userEvent.click(screen.getByText('Save Prompt'));
@@ -203,17 +203,17 @@ describe('Prompt Manager', () => {
       expect(changePromptTab).toHaveAttribute('aria-selected', 'true');
       
       // Verify form is populated with prompt data
-      expect(screen.getByPlaceholderText('Prompt Title')).toHaveValue('Test Prompt');
-      expect(screen.getByPlaceholderText(/Enter your prompt/)).toHaveValue('Test Content');
+      expect(screen.getByPlaceholderText('Enter prompt title')).toHaveValue('Test Prompt');
+      expect(screen.getByPlaceholderText('Enter prompt content')).toHaveValue('Test Content');
       
       // Update the prompt
-      await userEvent.clear(screen.getByPlaceholderText('Prompt Title'));
-      await userEvent.type(screen.getByPlaceholderText('Prompt Title'), 'Updated Prompt');
-      await userEvent.clear(screen.getByPlaceholderText(/Enter your prompt/));
-      await userEvent.type(screen.getByPlaceholderText(/Enter your prompt/), 'Updated Content');
+      await userEvent.clear(screen.getByPlaceholderText('Enter prompt title'));
+      await userEvent.type(screen.getByPlaceholderText('Enter prompt title'), 'Updated Prompt');
+      await userEvent.clear(screen.getByPlaceholderText('Enter prompt content'));
+      await userEvent.type(screen.getByPlaceholderText('Enter prompt content'), 'Updated Content');
       
       // Save changes
-      await userEvent.click(screen.getByText('Save Changes'));
+      await userEvent.click(screen.getByText('Update Prompt'));
       
       // Verify storage was called with updated prompt
       expect(storage.set).toHaveBeenCalledWith({
@@ -263,8 +263,8 @@ describe('Prompt Manager', () => {
       expect(changePromptTab).toHaveAttribute('aria-selected', 'true');
       
       // Verify form is populated with prompt data
-      expect(screen.getByPlaceholderText('Prompt Title')).toHaveValue('Test Prompt');
-      expect(screen.getByPlaceholderText(/Enter your prompt/)).toHaveValue('Test Content');
+      expect(screen.getByPlaceholderText('Enter prompt title')).toHaveValue('Test Prompt');
+      expect(screen.getByPlaceholderText('Enter prompt content')).toHaveValue('Test Content');
       
       // Click cancel button
       await userEvent.click(screen.getByText('Cancel'));
@@ -312,8 +312,8 @@ describe('Prompt Manager', () => {
       expect(changePromptTab).toHaveAttribute('aria-selected', 'true');
       
       // Verify form is populated with prompt data
-      expect(screen.getByPlaceholderText('Prompt Title')).toHaveValue('Test Prompt');
-      expect(screen.getByPlaceholderText(/Enter your prompt/)).toHaveValue('Test Content');
+      expect(screen.getByPlaceholderText('Enter prompt title')).toHaveValue('Test Prompt');
+      expect(screen.getByPlaceholderText('Enter prompt content')).toHaveValue('Test Content');
     });
 
     test('should switch to Browse Prompts tab after saving changes', async () => {
@@ -343,11 +343,11 @@ describe('Prompt Manager', () => {
       expect(changePromptTab).toHaveAttribute('aria-selected', 'true');
       
       // Make some changes
-      await userEvent.clear(screen.getByPlaceholderText('Prompt Title'));
-      await userEvent.type(screen.getByPlaceholderText('Prompt Title'), 'Updated Title');
+      await userEvent.clear(screen.getByPlaceholderText('Enter prompt title'));
+      await userEvent.type(screen.getByPlaceholderText('Enter prompt title'), 'Updated Title');
       
       // Click Save Changes
-      await userEvent.click(screen.getByText('Save Changes'));
+      await userEvent.click(screen.getByText('Update Prompt'));
       
       // Verify we're automatically switched to Browse Prompts tab
       const browseTab = screen.getByRole('tab', { name: 'Browse Prompts' });
@@ -355,6 +355,173 @@ describe('Prompt Manager', () => {
       
       // Verify we can see the updated content in the browse view
       expect(screen.getByText('Updated Title')).toBeInTheDocument();
+    });
+  });
+
+  describe('Tag Management', () => {
+    test('should add tags to a new prompt', async () => {
+      render(<App />);
+      
+      // Ensure we're on the Add Prompt tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Add Prompt' }));
+      
+      // Fill in the prompt details
+      await userEvent.type(screen.getByPlaceholderText('Enter prompt title'), 'Test Prompt');
+      await userEvent.type(screen.getByPlaceholderText('Enter prompt content'), 'Test Content');
+      
+      // Add tags
+      const tagInput = screen.getByPlaceholderText('Add tags (press Enter)');
+      await userEvent.type(tagInput, 'tag1{enter}');
+      await userEvent.type(tagInput, 'tag2{enter}');
+      
+      // Verify tags are displayed
+      expect(screen.getByText('tag1')).toBeInTheDocument();
+      expect(screen.getByText('tag2')).toBeInTheDocument();
+      
+      // Save the prompt
+      await userEvent.click(screen.getByText('Save Prompt'));
+      
+      // Verify storage was called with the new prompt including tags
+      expect(storage.set).toHaveBeenCalledWith(expect.objectContaining({
+        prompts: expect.arrayContaining([
+          expect.objectContaining({
+            title: 'Test Prompt',
+            content: 'Test Content',
+            tags: ['tag1', 'tag2'],
+          }),
+        ]),
+      }));
+      
+      // Verify tags are visible in the browse view
+      expect(screen.getByText('tag1')).toBeInTheDocument();
+      expect(screen.getByText('tag2')).toBeInTheDocument();
+    });
+
+    test('should not add duplicate tags', async () => {
+      render(<App />);
+      
+      // Ensure we're on the Add Prompt tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Add Prompt' }));
+      
+      // Add the same tag twice
+      const tagInput = screen.getByPlaceholderText('Add tags (press Enter)');
+      await userEvent.type(tagInput, 'tag1{enter}');
+      await userEvent.type(tagInput, 'tag1{enter}');
+      
+      // Verify only one instance of the tag is displayed
+      const tagElements = screen.getAllByText('tag1');
+      expect(tagElements).toHaveLength(1);
+    });
+
+    test('should remove tags from a prompt', async () => {
+      render(<App />);
+      
+      // Ensure we're on the Add Prompt tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Add Prompt' }));
+      
+      // Add a tag
+      const tagInput = screen.getByPlaceholderText('Add tags (press Enter)');
+      await userEvent.type(tagInput, 'tag1{enter}');
+      
+      // Remove the tag
+      const removeButton = screen.getByText('×');
+      await userEvent.click(removeButton);
+      
+      // Verify tag is removed
+      expect(screen.queryByText('tag1')).not.toBeInTheDocument();
+    });
+
+    test('should edit tags of an existing prompt', async () => {
+      const mockPrompts = [{
+        id: '1',
+        title: 'Test Prompt',
+        content: 'Test Content',
+        tags: ['old-tag'],
+        createdAt: new Date().toISOString(),
+      }];
+      
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts });
+      
+      render(<App />);
+      
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
+      
+      // Wait for the prompt to be rendered
+      await screen.findByText('Test Prompt');
+      
+      // Click edit button
+      const editButton = screen.getByTitle('Edit prompt');
+      await userEvent.click(editButton);
+      
+      // Verify existing tag is displayed
+      expect(screen.getByText('old-tag')).toBeInTheDocument();
+      
+      // Remove old tag
+      const removeButton = screen.getByText('×');
+      await userEvent.click(removeButton);
+      
+      // Add new tag
+      const tagInput = screen.getByPlaceholderText('Add tags (press Enter)');
+      await userEvent.type(tagInput, 'new-tag{enter}');
+      
+      // Save changes
+      await userEvent.click(screen.getByText('Update Prompt'));
+      
+      // Verify storage was called with updated tags
+      expect(storage.set).toHaveBeenCalledWith({
+        prompts: expect.arrayContaining([
+          expect.objectContaining({
+            id: '1',
+            title: 'Test Prompt',
+            content: 'Test Content',
+            tags: ['new-tag'],
+            updatedAt: expect.any(String),
+          }),
+        ]),
+      });
+      
+      // Verify new tag is visible in the browse view
+      expect(screen.getByText('new-tag')).toBeInTheDocument();
+      expect(screen.queryByText('old-tag')).not.toBeInTheDocument();
+    });
+
+    test('should search prompts by tags', async () => {
+      const mockPrompts = [
+        {
+          id: '1',
+          title: 'Prompt 1',
+          content: 'Content 1',
+          tags: ['tag1', 'tag2'],
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: '2',
+          title: 'Prompt 2',
+          content: 'Content 2',
+          tags: ['tag3'],
+          createdAt: new Date().toISOString(),
+        },
+      ];
+      
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts });
+      
+      render(<App />);
+      
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
+      
+      // Wait for prompts to be rendered
+      await screen.findByText('Prompt 1');
+      await screen.findByText('Prompt 2');
+      
+      // Search by tag
+      const searchInput = screen.getByPlaceholderText('Search prompts...');
+      await userEvent.type(searchInput, 'tag1');
+      
+      // Verify only prompt with matching tag is shown
+      expect(screen.getByText('Prompt 1')).toBeInTheDocument();
+      expect(screen.queryByText('Prompt 2')).not.toBeInTheDocument();
     });
   });
 
