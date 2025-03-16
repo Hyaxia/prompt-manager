@@ -351,9 +351,11 @@ function App() {
                     <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300">
                       <div 
                         data-testid="prompt-content"
-                        className={`${prompt.content.length > 200 && !expandedPrompts.has(prompt.id) ? 'max-h-[100px] overflow-hidden' : ''} relative`}
+                        className={`${prompt.content.length > 200 && !expandedPrompts.has(prompt.id) ? 'max-h-[100px] overflow-hidden' : ''} relative whitespace-pre-wrap`}
                       >
-                        <ReactMarkdown>{prompt.content}</ReactMarkdown>
+                        <ReactMarkdown components={{
+                          p: ({children}) => <p className="whitespace-pre-wrap">{children}</p>
+                        }}>{prompt.content}</ReactMarkdown>
                         {prompt.content.length > 200 && !expandedPrompts.has(prompt.id) && (
                           <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white dark:from-gray-800 to-transparent" />
                         )}

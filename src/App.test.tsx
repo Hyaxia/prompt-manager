@@ -782,4 +782,49 @@ describe('Prompt Manager', () => {
       expect(screen.getByText(longContent).closest('div')?.nextSibling).toHaveClass('bg-gradient-to-t');
     });
   });
+
+  describe('Content Formatting', () => {
+    test('should preserve multiple newlines in prompt content', async () => {
+      const contentWithNewlines = 'Line 1\n\nLine 2\n\n\nLine 3';
+      const mockPrompts = [{
+        id: '1',
+        title: 'Test Prompt',
+        content: contentWithNewlines,
+        createdAt: new Date().toISOString(),
+        tags: []
+      }];
+      
+      (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts });
+      
+      render(<App />);
+      
+      // Switch to Browse Prompts tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
+      
+      // Get the content container
+      const contentContainer = screen.getByTestId('prompt-content');
+      
+      // Verify whitespace-pre-wrap class is present
+      expect(contentContainer).toHaveClass('whitespace-pre-wrap');
+      
+      // Verify the content is rendered with preserved newlines
+      // Instead of looking for <p>, we'll check the actual rendered content
+      expect(contentContainer).toHaveTextContent('Line 1');
+      expect(contentContainer).toHaveTextContent('Line 2');
+      expect(contentContainer).toHaveTextContent('Line 3');
+      
+      // Test creating a new prompt with multiple newlines
+      await userEvent.click(screen.getByRole('tab', { name: 'Add Prompt' }));
+      await userEvent.type(screen.getByPlaceholderText('Enter prompt title'), 'New Prompt');
+      await userEvent.type(screen.getByPlaceholderText('Enter prompt content'), contentWithNewlines);
+      await userEvent.click(screen.getByText('Save Prompt'));
+      
+      // Verify the new prompt's content preserves newlines
+      const newContentContainer = screen.getAllByTestId('prompt-content')[1];
+      expect(newContentContainer).toHaveClass('whitespace-pre-wrap');
+      expect(newContentContainer).toHaveTextContent('Line 1');
+      expect(newContentContainer).toHaveTextContent('Line 2');
+      expect(newContentContainer).toHaveTextContent('Line 3');
+    });
+  });
 }); 
