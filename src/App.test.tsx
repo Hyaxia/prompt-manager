@@ -108,6 +108,26 @@ describe('Prompt Manager', () => {
       expect(screen.getByText('Test Content')).toBeInTheDocument();
     });
 
+    test('should limit title to 30 characters', async () => {
+      render(<App />);
+      
+      // Ensure we're on the Add Prompt tab
+      await userEvent.click(screen.getByRole('tab', { name: 'Add Prompt' }));
+      
+      // Get the title input
+      const titleInput = screen.getByPlaceholderText('Enter prompt title');
+      
+      // Type a long title (more than 30 characters)
+      const longTitle = 'This is a very long title that exceeds thirty characters';
+      await userEvent.type(titleInput, longTitle);
+      
+      // Verify the input value is truncated to 30 characters
+      expect(titleInput).toHaveValue(longTitle.slice(0, 30));
+      
+      // Verify the character counter shows 30/30
+      expect(screen.getByText('30/30')).toBeInTheDocument();
+    });
+
     test('should not save prompt with empty title or content', async () => {
       render(<App />);
       
@@ -717,7 +737,6 @@ describe('Prompt Manager', () => {
       
       // Content should be expanded
       contentContainer = screen.getByTestId('prompt-content');
-      expect(contentContainer).toHaveClass('min-h-[100px]');
       expect(contentContainer).not.toHaveClass('max-h-[100px]');
       
       // Show Less button should be visible

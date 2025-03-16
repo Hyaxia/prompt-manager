@@ -351,7 +351,7 @@ function App() {
                     <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300">
                       <div 
                         data-testid="prompt-content"
-                        className={`${prompt.content.length > 200 && !expandedPrompts.has(prompt.id) ? 'max-h-[100px]' : 'min-h-[100px]'} overflow-hidden relative`}
+                        className={`${prompt.content.length > 200 && !expandedPrompts.has(prompt.id) ? 'max-h-[100px] overflow-hidden' : ''} relative`}
                       >
                         <ReactMarkdown>{prompt.content}</ReactMarkdown>
                         {prompt.content.length > 200 && !expandedPrompts.has(prompt.id) && (
@@ -401,13 +401,22 @@ function App() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Title
                   </label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="Enter prompt title"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={title}
+                      onChange={(e) => {
+                        const newTitle = e.target.value.slice(0, 30);
+                        setTitle(newTitle);
+                      }}
+                      maxLength={30}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      placeholder="Enter prompt title"
+                    />
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400">
+                      {title.length}/30
+                    </div>
+                  </div>
                 </div>
 
                 <div>
