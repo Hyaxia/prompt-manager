@@ -1,6 +1,6 @@
 /// <reference types="node" />
-import React, { useState, useEffect } from 'react';
-import { Save, Trash2, Plus, Search, Copy, Check, Download, Edit, ChevronDown, ChevronUp, Sun, Moon } from 'lucide-react';
+import React, { useState, useEffect, useRef, MutableRefObject, useMemo } from 'react';
+import { Save, Trash2, Search, Copy, Check, Download, Edit, ChevronDown, ChevronUp, Sun, Moon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Tab } from '@headlessui/react';
 import storage from './storage';
@@ -20,7 +20,6 @@ function App() {
   const [content, setContent] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
-  const [preview, setPreview] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null);
   const [editingPromptId, setEditingPromptId] = useState<string | null>(null);
@@ -28,6 +27,9 @@ function App() {
   const [undoTimeout, setUndoTimeout] = useState<NodeJS.Timeout | null>(null);
   const [expandedPrompts, setExpandedPrompts] = useState<Set<string>>(new Set());
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showMoreState, setShowMoreState] = useState<Record<string, boolean>>({});
+  const promptRefs: MutableRefObject<Record<string, HTMLDivElement>> = useRef({});
+
 
   useEffect(() => {
     // Load prompts and theme preference
@@ -211,12 +213,28 @@ function App() {
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
-  const filteredPrompts = prompts.filter(prompt => {
-    const query = searchQuery.toLowerCase();
-    return prompt.title.toLowerCase().includes(query) ||
-           prompt.content.toLowerCase().includes(query) ||
-           (prompt.tags && prompt.tags.some(tag => tag.toLowerCase().includes(query)));
-  });
+  const filteredPrompts = useMemo(() => {
+    return prompts.filter(prompt => {
+      const query = searchQuery.toLowerCase();
+      return prompt.title.toLowerCase().includes(query) ||
+             prompt.content.toLowerCase().includes(query) ||
+             (prompt.tags && prompt.tags.some(tag => tag.toLowerCase().includes(query)));
+    });
+  }, [prompts, searchQuery]);
+
+  useEffect(() => {
+    const newShowMoreState: Record<string, boolean> = {};
+
+    filteredPrompts.forEach((prompt) => {
+      const element = promptRefs.current[prompt.id];
+      if (element) {
+        const contentHeight = element.scrollHeight;
+        newShowMoreState[prompt.id] = prompt.content.length > 300 || contentHeight > 100;
+      }
+    });
+
+    setShowMoreState(newShowMoreState);
+  }, [filteredPrompts]); // Now this is safe because filteredPrompts is memoized
 
   const togglePromptExpansion = (promptId: string) => {
     setExpandedPrompts(prev => {
@@ -349,15 +367,18 @@ function App() {
                       </div>
                     )}
                     <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300">
-                      <div 
-                        data-testid="prompt-content"
-                        className={`${prompt.content.length > 200 && !expandedPrompts.has(prompt.id) ? 'max-h-[100px] overflow-hidden' : ''} relative whitespace-pre-wrap`}
-                      >
-                        <ReactMarkdown components={{
-                          p: ({children}) => <p className="whitespace-pre-wrap">{children}</p>
-                        }}>{prompt.content}</ReactMarkdown>
-                        {prompt.content.length > 200 && !expandedPrompts.has(prompt.id) && (
-                          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white dark:from-gray-800 to-transparent" />
+                      <div className="relative">
+                        <div 
+                          ref={(el) => el && (promptRefs.current[prompt.id] = el)}
+                          data-testid="prompt-content"
+                          className={`${!expandedPrompts.has(prompt.id) ? 'max-h-[100px]' : ''} overflow-y-auto whitespace-pre-wrap`}
+                        >
+                          <ReactMarkdown components={{
+                            p: ({children}) => <p className="whitespace-pre-wrap">{children}</p>
+                          }}>{prompt.content}</ReactMarkdown>
+                        </div>
+                        {!expandedPrompts.has(prompt.id) && showMoreState[prompt.id] && (
+                          <div data-testid="fade-gradient" className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white dark:from-gray-800 to-transparent pointer-events-none" />
                         )}
                       </div>
                     </div>
@@ -365,21 +386,21 @@ function App() {
                       <p className="text-xs text-gray-400 dark:text-gray-500">
                         {new Date(prompt.createdAt).toLocaleDateString()}
                       </p>
-                      {prompt.content.length > 200 && (
-                        <button
-                          onClick={() => togglePromptExpansion(prompt.id)}
-                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm flex items-center gap-1"
-                        >
-                          {expandedPrompts.has(prompt.id) ? (
-                            <>
-                              Show Less
-                              <ChevronUp className="w-4 h-4" />
-                            </>
-                          ) : (
-                            <>
-                              Show More
-                              <ChevronDown className="w-4 h-4" />
-                            </>
+                      {showMoreState[prompt.id] && (
+                      <button
+                        onClick={() => togglePromptExpansion(prompt.id)}
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm flex items-center gap-1"
+                      >
+                        {expandedPrompts.has(prompt.id) ? (
+                          <>
+                            Show Less
+                            <ChevronUp className="w-4 h-4" />
+                          </>
+                        ) : (
+                          <>
+                            Show More
+                            <ChevronDown className="w-4 h-4" />
+                          </>
                           )}
                         </button>
                       )}

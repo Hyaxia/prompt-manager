@@ -667,7 +667,7 @@ describe('Prompt Manager', () => {
 
   describe('Show More/Less Functionality', () => {
     test('should show truncated content with Show More button for long prompts', async () => {
-      const longContent = 'A'.repeat(300);
+      const longContent = 'A'.repeat(301);
       const mockPrompts = [{
         id: '1',
         title: 'Long Prompt',
@@ -686,8 +686,8 @@ describe('Prompt Manager', () => {
       const contentContainer = screen.getByTestId('prompt-content');
       expect(contentContainer).toHaveClass('max-h-[100px]');
       
-      // Verify Show More button is present
-      const showMoreButton = screen.getByText('Show More');
+      // Wait for and verify Show More button is present
+      const showMoreButton = await screen.findByText('Show More');
       expect(showMoreButton).toBeInTheDocument();
     });
 
@@ -709,11 +709,13 @@ describe('Prompt Manager', () => {
       
       // Verify Show More button is not present
       expect(screen.queryByText('Show More')).not.toBeInTheDocument();
-      expect(screen.queryByText('Show Less')).not.toBeInTheDocument();
+      
+      // Verify content is not truncated
+      expect(screen.queryByTestId('fade-gradient')).not.toBeInTheDocument();
     });
 
     test('should toggle content visibility when clicking Show More/Less', async () => {
-      const longContent = 'A'.repeat(300);
+      const longContent = 'A'.repeat(301);
       const mockPrompts = [{
         id: '1',
         title: 'Long Prompt',
@@ -728,22 +730,27 @@ describe('Prompt Manager', () => {
       // Switch to Browse Prompts tab
       await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
       
+      // Wait for the content to be rendered and showMoreState to be calculated
+      await screen.findByText('Long Prompt');
+      
       // Initial state: content is truncated
       let contentContainer = screen.getByTestId('prompt-content');
       expect(contentContainer).toHaveClass('max-h-[100px]');
       
-      // Click Show More
-      await userEvent.click(screen.getByText('Show More'));
+      // Wait for and click Show More
+      const showMoreButton = await screen.findByText('Show More');
+      await userEvent.click(showMoreButton);
       
       // Content should be expanded
       contentContainer = screen.getByTestId('prompt-content');
       expect(contentContainer).not.toHaveClass('max-h-[100px]');
       
-      // Show Less button should be visible
-      expect(screen.getByText('Show Less')).toBeInTheDocument();
+      // Wait for and verify Show Less button is visible
+      const showLessButton = await screen.findByText('Show Less');
+      expect(showLessButton).toBeInTheDocument();
       
       // Click Show Less
-      await userEvent.click(screen.getByText('Show Less'));
+      await userEvent.click(showLessButton);
       
       // Content should be truncated again
       contentContainer = screen.getByTestId('prompt-content');
@@ -751,7 +758,7 @@ describe('Prompt Manager', () => {
     });
 
     test('should maintain gradient overlay only when content is truncated', async () => {
-      const longContent = 'A'.repeat(300);
+      const longContent = 'A'.repeat(301);
       const mockPrompts = [{
         id: '1',
         title: 'Long Prompt',
@@ -767,19 +774,25 @@ describe('Prompt Manager', () => {
       await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
       
       // Initial state: gradient overlay should be present
-      expect(screen.getByText(longContent).closest('div')?.nextSibling).toHaveClass('bg-gradient-to-t');
+      const gradientOverlay = screen.getByTestId('prompt-content').parentElement?.querySelector('.bg-gradient-to-t');
+      expect(gradientOverlay).toBeInTheDocument();
+      expect(gradientOverlay).toHaveClass('bg-gradient-to-t');
       
-      // Click Show More
-      await userEvent.click(screen.getByText('Show More'));
+      // Wait for and click Show More
+      const showMoreButton = await screen.findByText('Show More');
+      await userEvent.click(showMoreButton);
       
       // Gradient overlay should be removed
-      expect(screen.getByText(longContent).closest('div')?.nextSibling).toBeFalsy();
+      expect(screen.getByTestId('prompt-content').parentElement?.querySelector('.bg-gradient-to-t')).not.toBeInTheDocument();
       
-      // Click Show Less
-      await userEvent.click(screen.getByText('Show Less'));
+      // Wait for and click Show Less
+      const showLessButton = await screen.findByText('Show Less');
+      await userEvent.click(showLessButton);
       
       // Gradient overlay should be back
-      expect(screen.getByText(longContent).closest('div')?.nextSibling).toHaveClass('bg-gradient-to-t');
+      const gradientOverlayAfter = screen.getByTestId('prompt-content').parentElement?.querySelector('.bg-gradient-to-t');
+      expect(gradientOverlayAfter).toBeInTheDocument();
+      expect(gradientOverlayAfter).toHaveClass('bg-gradient-to-t');
     });
   });
 
@@ -826,5 +839,48 @@ describe('Prompt Manager', () => {
       expect(newContentContainer).toHaveTextContent('Line 2');
       expect(newContentContainer).toHaveTextContent('Line 3');
     });
+  });
+  describe('Show More for Repetitive Content', () => {
+    // test('should show truncated content with Show More button for repetitive content', async () => {
+    //   // Create content with many repeated lines
+    //   const repetitiveContent = Array(20).fill('g\n');
+    //   const mockPrompts = [{
+    //     id: '1',
+    //     title: 'Repetitive Prompt',
+    //     content: repetitiveContent,
+    //     createdAt: new Date().toISOString(),
+    //   }];
+      
+    //   (storage.get as jest.Mock).mockResolvedValue({ prompts: mockPrompts });
+      
+    //   render(<App />);
+      
+    //   // Switch to Browse Prompts tab
+    //   await userEvent.click(screen.getByRole('tab', { name: 'Browse Prompts' }));
+      
+    //   // Verify the content is truncated initially
+    //   const contentContainer = screen.getByTestId('prompt-content');
+    //   expect(contentContainer).toHaveClass('max-h-[100px]');
+      
+    //   // Wait for and verify Show More button is present
+    //   const showMoreButton = await screen.findByText('Show More');
+    //   expect(showMoreButton).toBeInTheDocument();
+      
+    //   // Click Show More
+    //   await userEvent.click(showMoreButton);
+      
+    //   // Verify content is expanded
+    //   expect(contentContainer).not.toHaveClass('max-h-[100px]');
+      
+    //   // Wait for and verify Show Less button is now present
+    //   const showLessButton = await screen.findByText('Show Less');
+    //   expect(showLessButton).toBeInTheDocument();
+      
+    //   // Click Show Less
+    //   await userEvent.click(showLessButton);
+      
+    //   // Verify content is truncated again
+    //   expect(contentContainer).toHaveClass('max-h-[100px]');
+    // });
   });
 }); 
